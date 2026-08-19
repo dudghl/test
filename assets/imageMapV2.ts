@@ -124,6 +124,7 @@ export const characterImagesV2 = {
     "default": "/assets/characters-v2/beelzebub/portrait/default.webp",
     "fullbodyDefault": "/assets/characters-v2/beelzebub/fullbody/default.webp",
     "portrait": {
+      "smile": "/assets/characters-v2/beelzebub/portrait/smile.webp",
       "blush": "/assets/characters-v2/beelzebub/portrait/blush.webp",
       "serious": "/assets/characters-v2/beelzebub/portrait/serious.webp",
       "angry": "/assets/characters-v2/beelzebub/portrait/angry.webp",
