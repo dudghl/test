@@ -1,0 +1,454 @@
+{
+  "nemesis": {
+    "default": "/assets/characters-v2/nemesis/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/nemesis/fullbody/default.webp",
+    "portrait": {
+      "smile": "/assets/characters-v2/nemesis/portrait/smile.webp",
+      "blush": "/assets/characters-v2/nemesis/portrait/blush.webp",
+      "serious": "/assets/characters-v2/nemesis/portrait/serious.webp",
+      "angry": "/assets/characters-v2/nemesis/portrait/angry.webp",
+      "sad": "/assets/characters-v2/nemesis/portrait/sad.webp",
+      "shock": "/assets/characters-v2/nemesis/portrait/shock.webp",
+      "smug": "/assets/characters-v2/nemesis/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/nemesis/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/nemesis/portrait/worried.webp",
+      "confused": "/assets/characters-v2/nemesis/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/nemesis/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/nemesis/portrait/flustered.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "delpirem": {
+    "default": "/assets/characters-v2/delpirem/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/delpirem/fullbody/default.webp",
+    "portrait": {
+      "smile": "/assets/characters-v2/delpirem/portrait/smile.webp",
+      "blush": "/assets/characters-v2/delpirem/portrait/blush.webp",
+      "serious": "/assets/characters-v2/delpirem/portrait/serious.webp",
+      "angry": "/assets/characters-v2/delpirem/portrait/angry.webp",
+      "sad": "/assets/characters-v2/delpirem/portrait/sad.webp",
+      "shock": "/assets/characters-v2/delpirem/portrait/shock.webp",
+      "smug": "/assets/characters-v2/delpirem/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/delpirem/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/delpirem/portrait/worried.webp",
+      "confused": "/assets/characters-v2/delpirem/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/delpirem/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/delpirem/portrait/flustered.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "levian": {
+    "default": "/assets/characters-v2/levian/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/levian/fullbody/default.webp",
+    "portrait": {
+      "smile": "/assets/characters-v2/levian/portrait/smile.webp",
+      "blush": "/assets/characters-v2/levian/portrait/blush.webp",
+      "serious": "/assets/characters-v2/levian/portrait/serious.webp",
+      "angry": "/assets/characters-v2/levian/portrait/angry.webp",
+      "sad": "/assets/characters-v2/levian/portrait/sad.webp",
+      "shock": "/assets/characters-v2/levian/portrait/shock.webp",
+      "smug": "/assets/characters-v2/levian/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/levian/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/levian/portrait/worried.webp",
+      "confused": "/assets/characters-v2/levian/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/levian/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/levian/portrait/flustered.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "lily_lumina": {
+    "default": "/assets/characters-v2/lily_lumina/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/lily_lumina/fullbody/default.webp",
+    "portrait": {
+      "smile": "/assets/characters-v2/lily_lumina/portrait/smile.webp",
+      "blush": "/assets/characters-v2/lily_lumina/portrait/blush.webp",
+      "serious": "/assets/characters-v2/lily_lumina/portrait/serious.webp",
+      "angry": "/assets/characters-v2/lily_lumina/portrait/angry.webp",
+      "sad": "/assets/characters-v2/lily_lumina/portrait/sad.webp",
+      "shock": "/assets/characters-v2/lily_lumina/portrait/shock.webp",
+      "smug": "/assets/characters-v2/lily_lumina/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/lily_lumina/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/lily_lumina/portrait/worried.webp",
+      "confused": "/assets/characters-v2/lily_lumina/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/lily_lumina/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/lily_lumina/portrait/flustered.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "veradin": {
+    "default": "/assets/characters-v2/veradin/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/veradin/fullbody/default.webp",
+    "portrait": {
+      "smile": "/assets/characters-v2/veradin/portrait/smile.webp",
+      "blush": "/assets/characters-v2/veradin/portrait/blush.webp",
+      "serious": "/assets/characters-v2/veradin/portrait/serious.webp",
+      "angry": "/assets/characters-v2/veradin/portrait/angry.webp",
+      "sad": "/assets/characters-v2/veradin/portrait/sad.webp",
+      "shock": "/assets/characters-v2/veradin/portrait/shock.webp",
+      "smug": "/assets/characters-v2/veradin/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/veradin/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/veradin/portrait/worried.webp",
+      "confused": "/assets/characters-v2/veradin/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/veradin/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/veradin/portrait/flustered.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "belian": {
+    "default": "/assets/characters-v2/belian/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/belian/fullbody/default.webp",
+    "portrait": {
+      "smile": "/assets/characters-v2/belian/portrait/smile.webp",
+      "blush": "/assets/characters-v2/belian/portrait/blush.webp",
+      "serious": "/assets/characters-v2/belian/portrait/serious.webp",
+      "angry": "/assets/characters-v2/belian/portrait/angry.webp",
+      "sad": "/assets/characters-v2/belian/portrait/sad.webp",
+      "shock": "/assets/characters-v2/belian/portrait/shock.webp",
+      "smug": "/assets/characters-v2/belian/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/belian/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/belian/portrait/worried.webp",
+      "confused": "/assets/characters-v2/belian/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/belian/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/belian/portrait/flustered.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "beelzebub": {
+    "default": "/assets/characters-v2/beelzebub/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/beelzebub/fullbody/default.webp",
+    "portrait": {
+      "blush": "/assets/characters-v2/beelzebub/portrait/blush.webp",
+      "serious": "/assets/characters-v2/beelzebub/portrait/serious.webp",
+      "angry": "/assets/characters-v2/beelzebub/portrait/angry.webp",
+      "sad": "/assets/characters-v2/beelzebub/portrait/sad.webp",
+      "shock": "/assets/characters-v2/beelzebub/portrait/shock.webp",
+      "smug": "/assets/characters-v2/beelzebub/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/beelzebub/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/beelzebub/portrait/worried.webp",
+      "confused": "/assets/characters-v2/beelzebub/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/beelzebub/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/beelzebub/portrait/flustered.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "seriel": {
+    "default": "/assets/characters-v2/seriel/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/seriel/fullbody/default.webp",
+    "portrait": {
+      "blush": "/assets/characters-v2/seriel/portrait/blush.webp",
+      "serious": "/assets/characters-v2/seriel/portrait/serious.webp",
+      "angry": "/assets/characters-v2/seriel/portrait/angry.webp",
+      "shock": "/assets/characters-v2/seriel/portrait/shock.webp",
+      "smug": "/assets/characters-v2/seriel/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/seriel/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/seriel/portrait/worried.webp",
+      "laugh": "/assets/characters-v2/seriel/portrait/laugh.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "sloth": {
+    "default": "/assets/characters-v2/sloth/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/sloth/fullbody/default.webp",
+    "portrait": {
+      "smile": "/assets/characters-v2/sloth/portrait/smile.webp",
+      "blush": "/assets/characters-v2/sloth/portrait/blush.webp",
+      "angry": "/assets/characters-v2/sloth/portrait/angry.webp",
+      "sad": "/assets/characters-v2/sloth/portrait/sad.webp",
+      "smug": "/assets/characters-v2/sloth/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/sloth/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/sloth/portrait/worried.webp",
+      "confused": "/assets/characters-v2/sloth/portrait/confused.webp",
+      "flustered": "/assets/characters-v2/sloth/portrait/flustered.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "anastasia": {
+    "default": null,
+    "fullbodyDefault": "/assets/characters-v2/anastasia/fullbody/default.webp",
+    "portrait": {
+      "smug": "/assets/characters-v2/anastasia/portrait/smug.webp",
+      "worried": "/assets/characters-v2/anastasia/portrait/worried.webp",
+      "confused": "/assets/characters-v2/anastasia/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/anastasia/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/anastasia/portrait/flustered.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "artemis": {
+    "default": "/assets/characters-v2/artemis/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/artemis/fullbody/default.webp",
+    "portrait": {
+      "smile": "/assets/characters-v2/artemis/portrait/smile.webp",
+      "blush": "/assets/characters-v2/artemis/portrait/blush.webp",
+      "serious": "/assets/characters-v2/artemis/portrait/serious.webp",
+      "angry": "/assets/characters-v2/artemis/portrait/angry.webp",
+      "sad": "/assets/characters-v2/artemis/portrait/sad.webp",
+      "shock": "/assets/characters-v2/artemis/portrait/shock.webp",
+      "smug": "/assets/characters-v2/artemis/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/artemis/portrait/annoyed.webp",
+      "confused": "/assets/characters-v2/artemis/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/artemis/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/artemis/portrait/flustered.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "aris": {
+    "default": "/assets/characters-v2/aris/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/aris/fullbody/default.webp",
+    "portrait": {
+      "smile": "/assets/characters-v2/aris/portrait/smile.webp",
+      "blush": "/assets/characters-v2/aris/portrait/blush.webp",
+      "serious": "/assets/characters-v2/aris/portrait/serious.webp",
+      "angry": "/assets/characters-v2/aris/portrait/angry.webp",
+      "sad": "/assets/characters-v2/aris/portrait/sad.webp",
+      "shock": "/assets/characters-v2/aris/portrait/shock.webp",
+      "smug": "/assets/characters-v2/aris/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/aris/portrait/annoyed.webp",
+      "laugh": "/assets/characters-v2/aris/portrait/laugh.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "arien": {
+    "default": "/assets/characters-v2/arien/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/arien/fullbody/default.webp",
+    "portrait": {
+      "smile": "/assets/characters-v2/arien/portrait/smile.webp",
+      "blush": "/assets/characters-v2/arien/portrait/blush.webp",
+      "serious": "/assets/characters-v2/arien/portrait/serious.webp",
+      "angry": "/assets/characters-v2/arien/portrait/angry.webp",
+      "sad": "/assets/characters-v2/arien/portrait/sad.webp",
+      "shock": "/assets/characters-v2/arien/portrait/shock.webp",
+      "smug": "/assets/characters-v2/arien/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/arien/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/arien/portrait/worried.webp",
+      "confused": "/assets/characters-v2/arien/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/arien/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/arien/portrait/flustered.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "asmo": {
+    "default": "/assets/characters-v2/asmo/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/asmo/fullbody/default.webp",
+    "portrait": {
+      "smile": "/assets/characters-v2/asmo/portrait/smile.webp",
+      "blush": "/assets/characters-v2/asmo/portrait/blush.webp",
+      "serious": "/assets/characters-v2/asmo/portrait/serious.webp",
+      "angry": "/assets/characters-v2/asmo/portrait/angry.webp",
+      "sad": "/assets/characters-v2/asmo/portrait/sad.webp",
+      "shock": "/assets/characters-v2/asmo/portrait/shock.webp",
+      "smug": "/assets/characters-v2/asmo/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/asmo/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/asmo/portrait/worried.webp",
+      "confused": "/assets/characters-v2/asmo/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/asmo/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/asmo/portrait/flustered.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "emily": {
+    "default": "/assets/characters-v2/emily/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/emily/fullbody/default.webp",
+    "portrait": {
+      "smile": "/assets/characters-v2/emily/portrait/smile.webp",
+      "blush": "/assets/characters-v2/emily/portrait/blush.webp",
+      "serious": "/assets/characters-v2/emily/portrait/serious.webp",
+      "angry": "/assets/characters-v2/emily/portrait/angry.webp",
+      "sad": "/assets/characters-v2/emily/portrait/sad.webp",
+      "shock": "/assets/characters-v2/emily/portrait/shock.webp",
+      "smug": "/assets/characters-v2/emily/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/emily/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/emily/portrait/worried.webp",
+      "confused": "/assets/characters-v2/emily/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/emily/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/emily/portrait/flustered.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "etera": {
+    "default": "/assets/characters-v2/etera/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/etera/fullbody/default.webp",
+    "portrait": {
+      "smile": "/assets/characters-v2/etera/portrait/smile.webp",
+      "blush": "/assets/characters-v2/etera/portrait/blush.webp",
+      "serious": "/assets/characters-v2/etera/portrait/serious.webp",
+      "angry": "/assets/characters-v2/etera/portrait/angry.webp",
+      "sad": "/assets/characters-v2/etera/portrait/sad.webp",
+      "shock": "/assets/characters-v2/etera/portrait/shock.webp",
+      "smug": "/assets/characters-v2/etera/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/etera/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/etera/portrait/worried.webp",
+      "confused": "/assets/characters-v2/etera/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/etera/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/etera/portrait/flustered.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "elena": {
+    "default": "/assets/characters-v2/elena/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/elena/fullbody/default.webp",
+    "portrait": {
+      "smile": "/assets/characters-v2/elena/portrait/smile.webp",
+      "blush": "/assets/characters-v2/elena/portrait/blush.webp",
+      "serious": "/assets/characters-v2/elena/portrait/serious.webp",
+      "angry": "/assets/characters-v2/elena/portrait/angry.webp",
+      "sad": "/assets/characters-v2/elena/portrait/sad.webp",
+      "shock": "/assets/characters-v2/elena/portrait/shock.webp",
+      "smug": "/assets/characters-v2/elena/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/elena/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/elena/portrait/worried.webp",
+      "confused": "/assets/characters-v2/elena/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/elena/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/elena/portrait/flustered.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "isabel": {
+    "default": "/assets/characters-v2/isabel/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/isabel/fullbody/default.webp",
+    "portrait": {},
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "karne": {
+    "default": "/assets/characters-v2/karne/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/karne/fullbody/default.webp",
+    "portrait": {},
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "kartia": {
+    "default": "/assets/characters-v2/kartia/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/kartia/fullbody/default.webp",
+    "portrait": {},
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "pria": {
+    "default": "/assets/characters-v2/pria/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/pria/fullbody/default.webp",
+    "portrait": {},
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "laris": {
+    "default": "/assets/characters-v2/laris/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/laris/fullbody/default.webp",
+    "portrait": {},
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "lena": {
+    "default": "/assets/characters-v2/lena/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/lena/fullbody/default.webp",
+    "portrait": {},
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "lucia": {
+    "default": "/assets/characters-v2/lucia/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/lucia/fullbody/default.webp",
+    "portrait": {
+      "smile": "/assets/characters-v2/lucia/portrait/smile.webp",
+      "blush": "/assets/characters-v2/lucia/portrait/blush.webp",
+      "serious": "/assets/characters-v2/lucia/portrait/serious.webp",
+      "angry": "/assets/characters-v2/lucia/portrait/angry.webp",
+      "sad": "/assets/characters-v2/lucia/portrait/sad.webp",
+      "shock": "/assets/characters-v2/lucia/portrait/shock.webp",
+      "smug": "/assets/characters-v2/lucia/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/lucia/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/lucia/portrait/worried.webp",
+      "confused": "/assets/characters-v2/lucia/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/lucia/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/lucia/portrait/flustered.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "lillia": {
+    "default": "/assets/characters-v2/lillia/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/lillia/fullbody/default.webp",
+    "portrait": {
+      "smile": "/assets/characters-v2/lillia/portrait/smile.webp",
+      "blush": "/assets/characters-v2/lillia/portrait/blush.webp",
+      "serious": "/assets/characters-v2/lillia/portrait/serious.webp",
+      "angry": "/assets/characters-v2/lillia/portrait/angry.webp",
+      "sad": "/assets/characters-v2/lillia/portrait/sad.webp",
+      "shock": "/assets/characters-v2/lillia/portrait/shock.webp",
+      "smug": "/assets/characters-v2/lillia/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/lillia/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/lillia/portrait/worried.webp",
+      "confused": "/assets/characters-v2/lillia/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/lillia/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/lillia/portrait/flustered.webp"
+    },
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "mirabel": {
+    "default": "/assets/characters-v2/mirabel/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/mirabel/fullbody/default.webp",
+    "portrait": {},
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "sera": {
+    "default": "/assets/characters-v2/sera/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/sera/fullbody/default.webp",
+    "portrait": {},
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "serena": {
+    "default": "/assets/characters-v2/serena/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/serena/fullbody/default.webp",
+    "portrait": {},
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "sia": {
+    "default": "/assets/characters-v2/sia/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/sia/fullbody/default.webp",
+    "portrait": {},
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "aria": {
+    "default": "/assets/characters-v2/aria/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/aria/fullbody/default.webp",
+    "portrait": {},
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "elise": {
+    "default": "/assets/characters-v2/elise/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/elise/fullbody/default.webp",
+    "portrait": {},
+    "supportAnchors": {},
+    "eventCG": {}
+  },
+  "chloe": {
+    "default": "/assets/characters-v2/chloe/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/chloe/fullbody/default.webp",
+    "portrait": {},
+    "supportAnchors": {},
+    "eventCG": {}
+  }
+}
