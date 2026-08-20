@@ -513,7 +513,20 @@ export const characterImagesV2 = {
   "serena": {
     "default": "/assets/characters-v2/serena/portrait/default.webp",
     "fullbodyDefault": "/assets/characters-v2/serena/fullbody/default.webp",
-    "portrait": {},
+    "portrait": {
+      "smile": "/assets/characters-v2/serena/portrait/smile.webp",
+      "blush": "/assets/characters-v2/serena/portrait/blush.webp",
+      "serious": "/assets/characters-v2/serena/portrait/serious.webp",
+      "angry": "/assets/characters-v2/serena/portrait/angry.webp",
+      "sad": "/assets/characters-v2/serena/portrait/sad.webp",
+      "shock": "/assets/characters-v2/serena/portrait/shock.webp",
+      "smug": "/assets/characters-v2/serena/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/serena/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/serena/portrait/worried.webp",
+      "confused": "/assets/characters-v2/serena/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/serena/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/serena/portrait/flustered.webp"
+    },
     "supportAnchors": {},
     "eventCG": {}
   },
