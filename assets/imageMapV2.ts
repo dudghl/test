@@ -218,20 +218,7 @@ export const characterImagesV2 = {
   "artemis": {
     "default": "/assets/characters-v2/artemis/portrait/default.webp",
     "fullbodyDefault": "/assets/characters-v2/artemis/fullbody/default.webp",
-    "portrait": {
-      "smile": "/assets/characters-v2/artemis/portrait/smile.webp",
-      "blush": "/assets/characters-v2/artemis/portrait/blush.webp",
-      "serious": "/assets/characters-v2/artemis/portrait/serious.webp",
-      "angry": "/assets/characters-v2/artemis/portrait/angry.webp",
-      "sad": "/assets/characters-v2/artemis/portrait/sad.webp",
-      "shock": "/assets/characters-v2/artemis/portrait/shock.webp",
-      "smug": "/assets/characters-v2/artemis/portrait/smug.webp",
-      "annoyed": "/assets/characters-v2/artemis/portrait/annoyed.webp",
-      "worried": "/assets/characters-v2/artemis/portrait/worried.webp",
-      "confused": "/assets/characters-v2/artemis/portrait/confused.webp",
-      "laugh": "/assets/characters-v2/artemis/portrait/laugh.webp",
-      "flustered": "/assets/characters-v2/artemis/portrait/flustered.webp"
-    },
+    "portrait": {},
     "supportAnchors": {},
     "eventCG": {}
   },
