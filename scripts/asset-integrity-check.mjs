@@ -28,11 +28,30 @@ export function collectReferences(value, output = []) {
   return output;
 }
 
+export function validateReferenceOwnership(map) {
+  const errors = [];
+  if (!map || typeof map !== 'object' || Array.isArray(map)) return ['map payload must be a character-keyed object'];
+  for (const [characterKey, payload] of Object.entries(map)) {
+    const expectedPrefix = `${ACTIVE_ROOT}/${characterKey}/`;
+    for (const reference of collectReferences(payload)) {
+      if (!reference.startsWith(expectedPrefix)) errors.push(`character ${characterKey} declares path owned by another character: ${reference}`);
+    }
+  }
+  return errors;
+}
+
 export function compareDebt(current, baseline) {
   const known = current.filter((item) => baseline.includes(item));
   const fresh = current.filter((item) => !baseline.includes(item));
   const resolved = baseline.filter((item) => !current.includes(item));
   return { known, fresh, resolved };
+}
+
+export function compareBaselineGrowth(candidate, base) {
+  return {
+    addedMissing: candidate.knownMissingReferences.filter((item) => !base.knownMissingReferences.includes(item)),
+    addedUnreferenced: candidate.knownUnreferencedAssets.filter((item) => !base.knownUnreferencedAssets.includes(item)),
+  };
 }
 
 export function assessResolvedUnreferenced(resolved, tracked, references, changes, bytesEqual = () => false) {
@@ -144,6 +163,16 @@ export function runCheck(repo = process.cwd()) {
   const missingDebt = compareDebt(missing, baseline.knownMissingReferences ?? []);
   const unreferencedDebt = compareDebt(unreferenced, baseline.knownUnreferencedAssets ?? []);
   const diffBase = process.env.ASSET_INTEGRITY_DIFF_BASE ?? 'HEAD';
+  let baselineGrowth = { addedMissing: [], addedUnreferenced: [] };
+  let baseHasBaseline = true;
+  try { execFileSync('git', ['cat-file', '-e', `${diffBase}:scripts/asset-integrity-baseline.json`], { cwd: repo, stdio: 'ignore' }); }
+  catch { baseHasBaseline = false; }
+  if (baseHasBaseline) {
+    const baseBaseline = JSON.parse(execFileSync('git', ['show', `${diffBase}:scripts/asset-integrity-baseline.json`], { cwd: repo }).toString());
+    const baseErrors = validateBaseline(baseBaseline);
+    if (baseErrors.length) throw new Error(`protected-base baseline is invalid: ${baseErrors.join('; ')}`);
+    baselineGrowth = compareBaselineGrowth(baseline, baseBaseline);
+  }
   const changeOutput = execFileSync('git', ['diff', '--name-status', '-z', '-M', diffBase, '--', ACTIVE_ROOT], { cwd: repo }).toString();
   const changes = parseNameStatus(changeOutput);
   const hash = (buffer) => createHash('sha256').update(buffer).digest('hex');
@@ -156,11 +185,12 @@ export function runCheck(repo = process.cwd()) {
   const collisions = findCollisions(tracked);
   const naming = validatePaths(images);
   const legacy = legacyViolations([jsonText, tsText]);
+  const ownership = validateReferenceOwnership(jsonMap);
   const parity = mapsEqual(jsonMap, tsMap);
-  const errors = [...validateBaseline(baseline), ...missingDebt.fresh.map((p)=>`new missing reference: ${p}`), ...unreferencedDebt.fresh.map((p)=>`new unreferenced asset: ${p}`), ...resolvedAssets.errors, ...collisions, ...naming, ...legacy];
+  const errors = [...validateBaseline(baseline), ...baselineGrowth.addedMissing.map((p)=>`candidate baseline adds a missing reference: ${p}`), ...baselineGrowth.addedUnreferenced.map((p)=>`candidate baseline adds an unreferenced asset: ${p}`), ...missingDebt.fresh.map((p)=>`new missing reference: ${p}`), ...unreferencedDebt.fresh.map((p)=>`new unreferenced asset: ${p}`), ...resolvedAssets.errors, ...ownership, ...collisions, ...naming, ...legacy];
   if (!parity) errors.push('JSON and TypeScript map payloads diverge');
   const warnings = [...missingDebt.known.map((p)=>`known missing reference: ${p}`), ...unreferencedDebt.known.map((p)=>`known unreferenced asset: ${p}`), ...missingDebt.resolved.map((p)=>`resolved missing baseline entry can be removed: ${p}`), ...unreferencedDebt.resolved.map((p)=>`resolved unreferenced baseline entry can be removed: ${p}`), ...resolvedAssets.safeRenames.map((p)=>`verified byte-preserving rename: ${p}`)];
-  return { ok: errors.length === 0, summary: { trackedImages: images.length, declaredReferences: references.length, missing: missing.length, knownMissing: missingDebt.known.length, newMissing: missingDebt.fresh.length, unreferenced: unreferenced.length, knownUnreferenced: unreferencedDebt.known.length, newUnreferenced: unreferencedDebt.fresh.length, parity, collisions: collisions.length, naming: naming.length, legacy: legacy.length }, warnings, errors };
+  return { ok: errors.length === 0, summary: { trackedImages: images.length, declaredReferences: references.length, missing: missing.length, knownMissing: missingDebt.known.length, newMissing: missingDebt.fresh.length, unreferenced: unreferenced.length, knownUnreferenced: unreferencedDebt.known.length, newUnreferenced: unreferencedDebt.fresh.length, baselineGrowth: baselineGrowth.addedMissing.length + baselineGrowth.addedUnreferenced.length, parity, ownership: ownership.length, collisions: collisions.length, naming: naming.length, legacy: legacy.length }, warnings, errors };
 }
 
 function print(result) {

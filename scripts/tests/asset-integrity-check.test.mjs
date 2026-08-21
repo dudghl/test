@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { assessResolvedUnreferenced, collectReferences, compareDebt, findCollisions, legacyViolations, mapsEqual, validatePaths } from '../asset-integrity-check.mjs';
+import { assessResolvedUnreferenced, collectReferences, compareBaselineGrowth, compareDebt, findCollisions, legacyViolations, mapsEqual, validatePaths, validateReferenceOwnership } from '../asset-integrity-check.mjs';
 
 test('known missing debt is tolerated', () => assert.deepEqual(compareDebt(['assets/characters-v2/a/portrait/default.webp'], ['assets/characters-v2/a/portrait/default.webp']).fresh, []));
 test('new missing debt fails comparison', () => assert.equal(compareDebt(['assets/characters-v2/a/portrait/default.webp'], []).fresh.length, 1));
@@ -20,6 +20,26 @@ test('safe byte-preserving rename to a referenced path passes', () => {
 test('actual deletion without replacement fails', () => {
   const path = 'assets/characters-v2/bellian/portrait/default.webp';
   assert.equal(assessResolvedUnreferenced([path], [], [], [{ status: 'D', path }]).errors.length, 1);
+});
+test('swapping nemesis and delpirem payloads fails character ownership', () => {
+  const map = {
+    nemesis: { default: '/assets/characters-v2/delpirem/portrait/default.webp' },
+    delpirem: { default: '/assets/characters-v2/nemesis/portrait/default.webp' },
+  };
+  assert.equal(validateReferenceOwnership(map).length, 2);
+});
+test('same-PR missing debt and baseline addition still fails baseline growth', () => {
+  const path = 'assets/characters-v2/nemesis/portrait/deleted.webp';
+  const base = { knownMissingReferences: [], knownUnreferencedAssets: [] };
+  const candidate = { knownMissingReferences: [path], knownUnreferencedAssets: [] };
+  assert.deepEqual(compareDebt([path], candidate.knownMissingReferences).fresh, []);
+  assert.deepEqual(compareBaselineGrowth(candidate, base).addedMissing, [path]);
+});
+test('same-PR deletion and unreferenced baseline addition still fails baseline growth', () => {
+  const path = 'assets/characters-v2/nemesis/portrait/deleted.webp';
+  const base = { knownMissingReferences: [], knownUnreferencedAssets: [] };
+  const candidate = { knownMissingReferences: [], knownUnreferencedAssets: [path] };
+  assert.deepEqual(compareBaselineGrowth(candidate, base).addedUnreferenced, [path]);
 });
 test('map parity mismatch fails', () => assert.equal(mapsEqual({ a: 1 }, { a: 2 }), false));
 test('case-insensitive collision is found', () => assert.equal(findCollisions(['a/B.webp', 'a/b.webp']).length, 1));
