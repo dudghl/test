@@ -35,6 +35,18 @@ const pendingMigrationFixture = (sourceKey, destinationKey) => {
 const assessPending = (fixture) => assessApprovedCanonicalMigration(
   fixture.baseMap, fixture.candidateMap, fixture.baseBaseline, fixture.candidateBaseline, fixture.tracked, [],
 );
+const mirabelleMigrationFixture = () => {
+  const baseMap = { mirabel: bellianPayload('mirabel') };
+  const candidateMap = { mirabelle: bellianPayload('mirabelle') };
+  const source = collectSchemaReferences(baseMap);
+  const tracked = collectSchemaReferences(candidateMap);
+  const changes = source.map((oldPath, index) => ({ status: 'R100', oldPath, path: tracked[index] }));
+  const baseline = { knownMissingReferences: ['assets/characters-v2/future/portrait/default.webp'], knownUnreferencedAssets: [] };
+  return { baseMap, candidateMap, baseBaseline: structuredClone(baseline), candidateBaseline: structuredClone(baseline), tracked, changes };
+};
+const assessMirabelle = (fixture, parity = true, bytesEqual = () => true) => assessApprovedCanonicalMigration(
+  fixture.baseMap, fixture.candidateMap, fixture.baseBaseline, fixture.candidateBaseline, fixture.tracked, fixture.changes, parity, bytesEqual,
+);
 
 test('exact belian to bellian canonical migration passes', () => {
   const fixture = bellianMigrationFixture();
@@ -120,6 +132,53 @@ test('fria migration with baseline debt growth fails', () => {
 test('arbitrary key migrations are not approved', () => {
   assert.equal(assessPending(pendingMigrationFixture('typo', 'canonical')).approved, false);
 });
+test('exact mirabel to mirabelle metadata and byte-identical folder rename passes', () => {
+  assert.equal(assessMirabelle(mirabelleMigrationFixture()).approved, true);
+});
+test('mirabel metadata rename without physical folder rename fails', () => {
+  const fixture = mirabelleMigrationFixture(); fixture.changes = []; fixture.tracked = collectSchemaReferences(fixture.baseMap);
+  assert.equal(assessMirabelle(fixture).approved, false);
+});
+test('mirabel physical rename without metadata update fails', () => {
+  const fixture = mirabelleMigrationFixture(); fixture.candidateMap = structuredClone(fixture.baseMap);
+  assert.equal(assessMirabelle(fixture).approved, false);
+});
+test('mirabel rename with changed image bytes fails', () => {
+  const fixture = mirabelleMigrationFixture(); const changed = fixture.changes[0].oldPath;
+  assert.equal(assessMirabelle(fixture, true, (oldPath) => oldPath !== changed).approved, false);
+});
+test('mirabel rename with one image missing fails', () => {
+  const fixture = mirabelleMigrationFixture(); fixture.tracked.pop(); fixture.changes.pop();
+  assert.equal(assessMirabelle(fixture).approved, false);
+});
+test('mirabel migration to unrelated key fails', () => {
+  const fixture = mirabelleMigrationFixture(); fixture.candidateMap = { unrelated: fixture.candidateMap.mirabelle };
+  assert.equal(assessMirabelle(fixture).approved, false);
+});
+test('mirabel and mirabelle both present fails', () => {
+  const fixture = mirabelleMigrationFixture(); fixture.candidateMap.mirabel = structuredClone(fixture.baseMap.mirabel);
+  assert.equal(assessMirabelle(fixture).approved, false);
+});
+test('mirabelle migration with one expression removed fails', () => {
+  const fixture = mirabelleMigrationFixture(); delete fixture.candidateMap.mirabelle.portrait.smile;
+  assert.equal(assessMirabelle(fixture).approved, false);
+});
+test('mirabelle migration with smile and blush swapped fails', () => {
+  const fixture = mirabelleMigrationFixture();
+  [fixture.candidateMap.mirabelle.portrait.smile, fixture.candidateMap.mirabelle.portrait.blush] = [fixture.candidateMap.mirabelle.portrait.blush, fixture.candidateMap.mirabelle.portrait.smile];
+  assert.equal(assessMirabelle(fixture).approved, false);
+});
+test('mirabelle migration to wrong destination root fails', () => {
+  const fixture = mirabelleMigrationFixture(); fixture.candidateMap.mirabelle.default = '/assets/characters-v2/lucia/portrait/default.webp';
+  assert.equal(assessMirabelle(fixture).approved, false);
+});
+test('mirabelle migration requires no baseline change when there is no related debt', () => {
+  const fixture = mirabelleMigrationFixture();
+  assert.deepEqual(fixture.candidateBaseline, fixture.baseBaseline); assert.equal(assessMirabelle(fixture).approved, true);
+});
+test('mirabelle migration still enforces JSON and TypeScript parity', () => {
+  assert.equal(assessMirabelle(mirabelleMigrationFixture(), false).approved, false);
+});
 test('both pending migrations preserve the total missing-debt count', () => {
   const carne = pendingMigrationFixture('karne', 'carne');
   const fria = pendingMigrationFixture('pria', 'fria');
@@ -136,12 +195,15 @@ test('repository canonical pending identities preserve debt, assets, and protect
   const baseline = JSON.parse(readFileSync(new URL('../asset-integrity-baseline.json', import.meta.url), 'utf8'));
   assert.equal(baseline.knownMissingReferences.length, 148);
   assert.deepEqual(baseline.knownUnreferencedAssets, []);
-  for (const key of ['carne', 'fria', 'lucia', 'bellian']) assert.equal(Object.hasOwn(map, key), true);
-  for (const key of ['karne', 'pria', 'belian']) assert.equal(Object.hasOwn(map, key), false);
+  for (const key of ['carne', 'fria', 'lucia', 'bellian', 'mirabelle']) assert.equal(Object.hasOwn(map, key), true);
+  for (const key of ['karne', 'pria', 'belian', 'mirabel']) assert.equal(Object.hasOwn(map, key), false);
   for (const key of ['carne', 'fria']) {
     assert.equal(existsSync(new URL(`../../assets/characters-v2/${key}`, import.meta.url)), false);
     assert.equal(baseline.knownMissingReferences.some((reference) => reference.startsWith(`assets/characters-v2/${key}/`)), true);
   }
+  const mirabelleReferences = collectSchemaReferences({ mirabelle: map.mirabelle });
+  assert.equal(mirabelleReferences.length, 14);
+  assert.equal(mirabelleReferences.every((reference) => existsSync(new URL(`../../${reference}`, import.meta.url))), true);
 });
 
 test('known missing debt is tolerated', () => assert.deepEqual(compareDebt(['assets/characters-v2/a/portrait/default.webp'], ['assets/characters-v2/a/portrait/default.webp']).fresh, []));

@@ -469,22 +469,22 @@
     "supportAnchors": {},
     "eventCG": {}
   },
-  "mirabel": {
-    "default": "/assets/characters-v2/mirabel/portrait/default.webp",
-    "fullbodyDefault": "/assets/characters-v2/mirabel/fullbody/default.webp",
+  "mirabelle": {
+    "default": "/assets/characters-v2/mirabelle/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/mirabelle/fullbody/default.webp",
     "portrait": {
-      "smile": "/assets/characters-v2/mirabel/portrait/smile.webp",
-      "blush": "/assets/characters-v2/mirabel/portrait/blush.webp",
-      "serious": "/assets/characters-v2/mirabel/portrait/serious.webp",
-      "angry": "/assets/characters-v2/mirabel/portrait/angry.webp",
-      "sad": "/assets/characters-v2/mirabel/portrait/sad.webp",
-      "shock": "/assets/characters-v2/mirabel/portrait/shock.webp",
-      "smug": "/assets/characters-v2/mirabel/portrait/smug.webp",
-      "annoyed": "/assets/characters-v2/mirabel/portrait/annoyed.webp",
-      "worried": "/assets/characters-v2/mirabel/portrait/worried.webp",
-      "confused": "/assets/characters-v2/mirabel/portrait/confused.webp",
-      "laugh": "/assets/characters-v2/mirabel/portrait/laugh.webp",
-      "flustered": "/assets/characters-v2/mirabel/portrait/flustered.webp"
+      "smile": "/assets/characters-v2/mirabelle/portrait/smile.webp",
+      "blush": "/assets/characters-v2/mirabelle/portrait/blush.webp",
+      "serious": "/assets/characters-v2/mirabelle/portrait/serious.webp",
+      "angry": "/assets/characters-v2/mirabelle/portrait/angry.webp",
+      "sad": "/assets/characters-v2/mirabelle/portrait/sad.webp",
+      "shock": "/assets/characters-v2/mirabelle/portrait/shock.webp",
+      "smug": "/assets/characters-v2/mirabelle/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/mirabelle/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/mirabelle/portrait/worried.webp",
+      "confused": "/assets/characters-v2/mirabelle/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/mirabelle/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/mirabelle/portrait/flustered.webp"
     },
     "supportAnchors": {},
     "eventCG": {}
