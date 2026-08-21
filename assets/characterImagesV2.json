@@ -342,22 +342,22 @@
     "supportAnchors": {},
     "eventCG": {}
   },
-  "karne": {
-    "default": "/assets/characters-v2/karne/portrait/default.webp",
-    "fullbodyDefault": "/assets/characters-v2/karne/fullbody/default.webp",
+  "carne": {
+    "default": "/assets/characters-v2/carne/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/carne/fullbody/default.webp",
     "portrait": {
-      "smile": "/assets/characters-v2/karne/portrait/smile.webp",
-      "blush": "/assets/characters-v2/karne/portrait/blush.webp",
-      "serious": "/assets/characters-v2/karne/portrait/serious.webp",
-      "angry": "/assets/characters-v2/karne/portrait/angry.webp",
-      "sad": "/assets/characters-v2/karne/portrait/sad.webp",
-      "shock": "/assets/characters-v2/karne/portrait/shock.webp",
-      "smug": "/assets/characters-v2/karne/portrait/smug.webp",
-      "annoyed": "/assets/characters-v2/karne/portrait/annoyed.webp",
-      "worried": "/assets/characters-v2/karne/portrait/worried.webp",
-      "confused": "/assets/characters-v2/karne/portrait/confused.webp",
-      "laugh": "/assets/characters-v2/karne/portrait/laugh.webp",
-      "flustered": "/assets/characters-v2/karne/portrait/flustered.webp"
+      "smile": "/assets/characters-v2/carne/portrait/smile.webp",
+      "blush": "/assets/characters-v2/carne/portrait/blush.webp",
+      "serious": "/assets/characters-v2/carne/portrait/serious.webp",
+      "angry": "/assets/characters-v2/carne/portrait/angry.webp",
+      "sad": "/assets/characters-v2/carne/portrait/sad.webp",
+      "shock": "/assets/characters-v2/carne/portrait/shock.webp",
+      "smug": "/assets/characters-v2/carne/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/carne/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/carne/portrait/worried.webp",
+      "confused": "/assets/characters-v2/carne/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/carne/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/carne/portrait/flustered.webp"
     },
     "supportAnchors": {},
     "eventCG": {}
@@ -382,22 +382,22 @@
     "supportAnchors": {},
     "eventCG": {}
   },
-  "pria": {
-    "default": "/assets/characters-v2/pria/portrait/default.webp",
-    "fullbodyDefault": "/assets/characters-v2/pria/fullbody/default.webp",
+  "fria": {
+    "default": "/assets/characters-v2/fria/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/fria/fullbody/default.webp",
     "portrait": {
-      "smile": "/assets/characters-v2/pria/portrait/smile.webp",
-      "blush": "/assets/characters-v2/pria/portrait/blush.webp",
-      "serious": "/assets/characters-v2/pria/portrait/serious.webp",
-      "angry": "/assets/characters-v2/pria/portrait/angry.webp",
-      "sad": "/assets/characters-v2/pria/portrait/sad.webp",
-      "shock": "/assets/characters-v2/pria/portrait/shock.webp",
-      "smug": "/assets/characters-v2/pria/portrait/smug.webp",
-      "annoyed": "/assets/characters-v2/pria/portrait/annoyed.webp",
-      "worried": "/assets/characters-v2/pria/portrait/worried.webp",
-      "confused": "/assets/characters-v2/pria/portrait/confused.webp",
-      "laugh": "/assets/characters-v2/pria/portrait/laugh.webp",
-      "flustered": "/assets/characters-v2/pria/portrait/flustered.webp"
+      "smile": "/assets/characters-v2/fria/portrait/smile.webp",
+      "blush": "/assets/characters-v2/fria/portrait/blush.webp",
+      "serious": "/assets/characters-v2/fria/portrait/serious.webp",
+      "angry": "/assets/characters-v2/fria/portrait/angry.webp",
+      "sad": "/assets/characters-v2/fria/portrait/sad.webp",
+      "shock": "/assets/characters-v2/fria/portrait/shock.webp",
+      "smug": "/assets/characters-v2/fria/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/fria/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/fria/portrait/worried.webp",
+      "confused": "/assets/characters-v2/fria/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/fria/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/fria/portrait/flustered.webp"
     },
     "supportAnchors": {},
     "eventCG": {}
