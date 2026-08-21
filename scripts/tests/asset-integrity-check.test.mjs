@@ -86,9 +86,10 @@ test('protected known-unreferenced verified canonical rename passes', () => {
   const path = 'assets/characters-v2/bellian/portrait/default.webp';
   assert.deepEqual(assessProtectedUnreferenced([path], [path], ['assets/characters-v2/belian/portrait/default.webp'], [path]), []);
 });
-test('workflow uses the PR base SHA and range whitespace check', () => {
+test('workflow is PR-only and uses only the PR base SHA', () => {
   const workflow = readFileSync(new URL('../../.github/workflows/asset-integrity.yml', import.meta.url), 'utf8');
-  assert.match(workflow, /github\.event\.pull_request\.base\.sha/); assert.doesNotMatch(workflow, /HEAD\^/);
+  assert.match(workflow, /^\s*pull_request:\s*$/m); assert.doesNotMatch(workflow, /workflow_dispatch/);
+  assert.match(workflow, /github\.event\.pull_request\.base\.sha/); assert.doesNotMatch(workflow, /HEAD\^|github\.sha|\|\|/);
   assert.match(workflow, /git diff --check "\$ASSET_INTEGRITY_DIFF_BASE\.\.\.HEAD"/);
   assert.doesNotMatch(workflow, /^\s*run: git diff --check\s*$/m);
 });
