@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { assessAssetChanges, assessProtectedUnreferenced, assessResolvedUnreferenced, collectReferences, compareBaselineGrowth, compareDebt, findCollisions, legacyViolations, mapsEqual, validateMapSemantics, validatePaths, validateReferenceOwnership } from '../asset-integrity-check.mjs';
+import { assessAssetChanges, assessProtectedUnreferenced, assessResolvedUnreferenced, collectReferences, collectSchemaReferences, compareBaselineGrowth, compareDebt, findCollisions, legacyViolations, mapsEqual, validateMapSemantics, validatePaths, validateReferenceOwnership } from '../asset-integrity-check.mjs';
 
 test('known missing debt is tolerated', () => assert.deepEqual(compareDebt(['assets/characters-v2/a/portrait/default.webp'], ['assets/characters-v2/a/portrait/default.webp']).fresh, []));
 test('new missing debt fails comparison', () => assert.equal(compareDebt(['assets/characters-v2/a/portrait/default.webp'], []).fresh.length, 1));
@@ -103,6 +103,26 @@ test('smile and blush semantic slot swap fails', () => {
   assert.equal(validateMapSemantics({ nemesis: character }).length, 2);
 });
 test('correct semantic expression paths pass', () => assert.deepEqual(validateMapSemantics({ nemesis: semanticCharacter() }), []));
+test('portrait smile in the canonical schema slot is collected and passes', () => {
+  const map = { nemesis: semanticCharacter() };
+  assert.equal(validateMapSemantics(map).length, 0); assert.equal(collectSchemaReferences(map).includes('assets/characters-v2/nemesis/portrait/smile.webp'), true);
+});
+test('asset path moved to unknown top-level smileAsset fails and is not collected', () => {
+  const path = '/assets/characters-v2/nemesis/portrait/smile.webp';
+  const map = { nemesis: semanticCharacter({ portrait: {}, smileAsset: path }) };
+  assert.equal(validateMapSemantics(map).length, 1); assert.equal(collectSchemaReferences(map).includes(path.slice(1)), false);
+});
+test('unknown nested portrait asset-bearing field fails', () => {
+  const character = semanticCharacter({ portrait: { smileAsset: '/assets/characters-v2/nemesis/portrait/smile.webp' } });
+  const map = { nemesis: character };
+  assert.equal(validateMapSemantics(map).length, 1); assert.deepEqual(collectSchemaReferences(map), [
+    'assets/characters-v2/nemesis/portrait/default.webp', 'assets/characters-v2/nemesis/fullbody/default.webp',
+    'assets/characters-v2/nemesis/support/front_3q.webp',
+  ]);
+});
+test('canonical non-reference structure remains allowed', () => {
+  assert.deepEqual(validateMapSemantics({ nemesis: semanticCharacter({ eventCG: {} }) }), []);
+});
 test('explicit null semantic default passes', () => assert.deepEqual(validateMapSemantics({ nemesis: semanticCharacter({ default: null }) }), []));
 test('empty semantic expression map passes', () => assert.deepEqual(validateMapSemantics({ nemesis: semanticCharacter({ portrait: {} }) }), []));
 test('incorrect fullbody slot path fails', () => assert.equal(validateMapSemantics({ nemesis: semanticCharacter({ fullbodyDefault: '/assets/characters-v2/nemesis/portrait/default.webp' }) }).length, 1));

@@ -28,12 +28,30 @@ export function collectReferences(value, output = []) {
   return output;
 }
 
+export function collectSchemaReferences(map) {
+  const output = [];
+  const add = (value) => {
+    if (typeof value !== 'string') return;
+    try { output.push(normalizeAssetPath(value)); } catch { /* Semantic validation reports the slot-specific error. */ }
+  };
+  if (!map || typeof map !== 'object' || Array.isArray(map)) return output;
+  for (const payload of Object.values(map)) {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) continue;
+    add(payload.default); add(payload.fullbodyDefault);
+    if (payload.portrait && typeof payload.portrait === 'object' && !Array.isArray(payload.portrait))
+      for (const [expression, value] of Object.entries(payload.portrait)) if (EXPRESSIONS.has(expression)) add(value);
+    if (payload.supportAnchors && typeof payload.supportAnchors === 'object' && !Array.isArray(payload.supportAnchors)) for (const value of Object.values(payload.supportAnchors)) add(value);
+    if (payload.eventCG && typeof payload.eventCG === 'object' && !Array.isArray(payload.eventCG)) for (const value of Object.values(payload.eventCG)) add(value);
+  }
+  return output;
+}
+
 export function validateReferenceOwnership(map) {
   const errors = [];
   if (!map || typeof map !== 'object' || Array.isArray(map)) return ['map payload must be a character-keyed object'];
   for (const [characterKey, payload] of Object.entries(map)) {
     const expectedPrefix = `${ACTIVE_ROOT}/${characterKey}/`;
-    for (const reference of collectReferences(payload)) {
+    for (const reference of collectSchemaReferences({ [characterKey]: payload })) {
       if (!reference.startsWith(expectedPrefix)) errors.push(`character ${characterKey} declares path owned by another character: ${reference}`);
     }
   }
@@ -54,6 +72,8 @@ export function validateMapSemantics(map) {
   if (!map || typeof map !== 'object' || Array.isArray(map)) return ['map payload must be a character-keyed object'];
   for (const [characterKey, payload] of Object.entries(map)) {
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) { errors.push(`character ${characterKey} payload must be an object`); continue; }
+    const allowedFields = new Set(['default', 'fullbodyDefault', 'portrait', 'supportAnchors', 'eventCG']);
+    for (const field of Object.keys(payload)) if (!allowedFields.has(field)) errors.push(`${characterKey} has unknown character payload field: ${field}`);
     const root = `${ACTIVE_ROOT}/${characterKey}`;
     validateSlotReference(payload.default, `${characterKey}.default`, `${root}/portrait/default.webp`, errors);
     validateSlotReference(payload.fullbodyDefault, `${characterKey}.fullbodyDefault`, `${root}/fullbody/default.webp`, errors);
@@ -208,7 +228,7 @@ export function runCheck(repo = process.cwd()) {
   const baseline = JSON.parse(readFileSync(path.join(repo, 'scripts/asset-integrity-baseline.json'), 'utf8'));
   const jsonMap = JSON.parse(jsonText); const tsMap = parseTypeScriptMap(tsText);
   const tracked = execFileSync('git', ['ls-files', '-z', `${ACTIVE_ROOT}/**`], { cwd: repo }).toString().split('\0').filter(Boolean).sort();
-  const references = [...new Set(collectReferences(jsonMap))].sort();
+  const references = [...new Set(collectSchemaReferences(jsonMap))].sort();
   const missing = references.filter((p) => !existsSync(path.join(repo, p)));
   const images = tracked.filter((p) => /\.[^/]+$/.test(p));
   const unreferenced = images.filter((p) => !references.includes(p));
@@ -239,7 +259,7 @@ export function runCheck(repo = process.cwd()) {
   const resolvedAssets = assessResolvedUnreferenced(unreferencedDebt.resolved, tracked, references, changes, bytesEqual);
   const baseMap = JSON.parse(execFileSync('git', ['show', `${diffBase}:assets/characterImagesV2.json`], { cwd: repo }).toString());
   const baseTsMap = parseTypeScriptMap(execFileSync('git', ['show', `${diffBase}:assets/imageMapV2.ts`], { cwd: repo }).toString());
-  const baseReferences = [...new Set([...collectReferences(baseMap), ...collectReferences(baseTsMap)])].sort();
+  const baseReferences = [...new Set([...collectSchemaReferences(baseMap), ...collectSchemaReferences(baseTsMap)])].sort();
   const baseTracked = execFileSync('git', ['ls-tree', '-r', '--name-only', '-z', diffBase, '--', ACTIVE_ROOT], { cwd: repo }).toString().split('\0').filter(Boolean);
   const assetChanges = assessAssetChanges(baseTracked, baseReferences, tracked, references, changes, bytesEqual);
   const protectedUnreferencedErrors = assessProtectedUnreferenced(baseKnownUnreferenced, baseTracked, tracked, assetChanges.safeRenames);
