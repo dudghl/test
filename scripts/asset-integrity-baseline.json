@@ -56,20 +56,6 @@
     "assets/characters-v2/beelzebub/support/relaxed_interaction.webp",
     "assets/characters-v2/beelzebub/support/side_view.webp",
     "assets/characters-v2/beelzebub/support/sitting.webp",
-    "assets/characters-v2/belian/fullbody/default.webp",
-    "assets/characters-v2/belian/portrait/angry.webp",
-    "assets/characters-v2/belian/portrait/annoyed.webp",
-    "assets/characters-v2/belian/portrait/blush.webp",
-    "assets/characters-v2/belian/portrait/confused.webp",
-    "assets/characters-v2/belian/portrait/default.webp",
-    "assets/characters-v2/belian/portrait/flustered.webp",
-    "assets/characters-v2/belian/portrait/laugh.webp",
-    "assets/characters-v2/belian/portrait/sad.webp",
-    "assets/characters-v2/belian/portrait/serious.webp",
-    "assets/characters-v2/belian/portrait/shock.webp",
-    "assets/characters-v2/belian/portrait/smile.webp",
-    "assets/characters-v2/belian/portrait/smug.webp",
-    "assets/characters-v2/belian/portrait/worried.webp",
     "assets/characters-v2/delpirem/support/action_ready.webp",
     "assets/characters-v2/delpirem/support/back_3q.webp",
     "assets/characters-v2/delpirem/support/front_3q.webp",
@@ -165,20 +151,5 @@
     "assets/characters-v2/sloth/portrait/smug.webp",
     "assets/characters-v2/sloth/portrait/worried.webp"
   ],
-  "knownUnreferencedAssets": [
-    "assets/characters-v2/bellian/fullbody/default.webp",
-    "assets/characters-v2/bellian/portrait/angry.webp",
-    "assets/characters-v2/bellian/portrait/annoyed.webp",
-    "assets/characters-v2/bellian/portrait/blush.webp",
-    "assets/characters-v2/bellian/portrait/confused.webp",
-    "assets/characters-v2/bellian/portrait/default.webp",
-    "assets/characters-v2/bellian/portrait/flustered.webp",
-    "assets/characters-v2/bellian/portrait/laugh.webp",
-    "assets/characters-v2/bellian/portrait/sad.webp",
-    "assets/characters-v2/bellian/portrait/serious.webp",
-    "assets/characters-v2/bellian/portrait/shock.webp",
-    "assets/characters-v2/bellian/portrait/smile.webp",
-    "assets/characters-v2/bellian/portrait/smug.webp",
-    "assets/characters-v2/bellian/portrait/worried.webp"
-  ]
+  "knownUnreferencedAssets": []
 }

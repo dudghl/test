@@ -108,22 +108,22 @@ export const characterImagesV2 = {
     "supportAnchors": {},
     "eventCG": {}
   },
-  "belian": {
-    "default": "/assets/characters-v2/belian/portrait/default.webp",
-    "fullbodyDefault": "/assets/characters-v2/belian/fullbody/default.webp",
+  "bellian": {
+    "default": "/assets/characters-v2/bellian/portrait/default.webp",
+    "fullbodyDefault": "/assets/characters-v2/bellian/fullbody/default.webp",
     "portrait": {
-      "smile": "/assets/characters-v2/belian/portrait/smile.webp",
-      "blush": "/assets/characters-v2/belian/portrait/blush.webp",
-      "serious": "/assets/characters-v2/belian/portrait/serious.webp",
-      "angry": "/assets/characters-v2/belian/portrait/angry.webp",
-      "sad": "/assets/characters-v2/belian/portrait/sad.webp",
-      "shock": "/assets/characters-v2/belian/portrait/shock.webp",
-      "smug": "/assets/characters-v2/belian/portrait/smug.webp",
-      "annoyed": "/assets/characters-v2/belian/portrait/annoyed.webp",
-      "worried": "/assets/characters-v2/belian/portrait/worried.webp",
-      "confused": "/assets/characters-v2/belian/portrait/confused.webp",
-      "laugh": "/assets/characters-v2/belian/portrait/laugh.webp",
-      "flustered": "/assets/characters-v2/belian/portrait/flustered.webp"
+      "smile": "/assets/characters-v2/bellian/portrait/smile.webp",
+      "blush": "/assets/characters-v2/bellian/portrait/blush.webp",
+      "serious": "/assets/characters-v2/bellian/portrait/serious.webp",
+      "angry": "/assets/characters-v2/bellian/portrait/angry.webp",
+      "sad": "/assets/characters-v2/bellian/portrait/sad.webp",
+      "shock": "/assets/characters-v2/bellian/portrait/shock.webp",
+      "smug": "/assets/characters-v2/bellian/portrait/smug.webp",
+      "annoyed": "/assets/characters-v2/bellian/portrait/annoyed.webp",
+      "worried": "/assets/characters-v2/bellian/portrait/worried.webp",
+      "confused": "/assets/characters-v2/bellian/portrait/confused.webp",
+      "laugh": "/assets/characters-v2/bellian/portrait/laugh.webp",
+      "flustered": "/assets/characters-v2/bellian/portrait/flustered.webp"
     },
     "supportAnchors": {},
     "eventCG": {}

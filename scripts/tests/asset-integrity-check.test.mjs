@@ -1,7 +1,67 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import test from 'node:test';
-import { readFileSync } from 'node:fs';
-import { assessAssetChanges, assessProtectedUnreferenced, assessResolvedUnreferenced, collectReferences, collectSchemaReferences, compareBaselineGrowth, compareDebt, findCollisions, legacyViolations, mapsEqual, validateMapSemantics, validatePaths, validateProtectedStructure, validateReferenceOwnership } from '../asset-integrity-check.mjs';
+import { existsSync, readFileSync } from 'node:fs';
+import { assessApprovedCanonicalMigration, assessAssetChanges, assessProtectedUnreferenced, assessResolvedUnreferenced, collectReferences, collectSchemaReferences, compareBaselineGrowth, compareDebt, findCollisions, legacyViolations, mapsEqual, validateMapSemantics, validatePaths, validateProtectedStructure, validateReferenceOwnership } from '../asset-integrity-check.mjs';
+
+const bellianPayload = (key) => ({
+  default: `/assets/characters-v2/${key}/portrait/default.webp`,
+  fullbodyDefault: `/assets/characters-v2/${key}/fullbody/default.webp`,
+  portrait: Object.fromEntries(['smile','blush','serious','angry','sad','shock','smug','annoyed','worried','confused','laugh','flustered'].map((expression) => [expression, `/assets/characters-v2/${key}/portrait/${expression}.webp`])),
+  supportAnchors: {}, eventCG: {},
+});
+const bellianMigrationFixture = () => {
+  const baseMap = { belian: bellianPayload('belian') };
+  const candidateMap = { bellian: bellianPayload('bellian') };
+  const source = collectSchemaReferences(baseMap);
+  const destination = collectSchemaReferences(candidateMap);
+  const unrelatedMissing = 'assets/characters-v2/future/portrait/default.webp';
+  const baseBaseline = { knownMissingReferences: [unrelatedMissing, ...source], knownUnreferencedAssets: destination };
+  const candidateBaseline = { knownMissingReferences: [unrelatedMissing], knownUnreferencedAssets: [] };
+  return { baseMap, candidateMap, baseBaseline, candidateBaseline, tracked: destination };
+};
+
+test('exact belian to bellian canonical migration passes', () => {
+  const fixture = bellianMigrationFixture();
+  assert.equal(assessApprovedCanonicalMigration(fixture.baseMap, fixture.candidateMap, fixture.baseBaseline, fixture.candidateBaseline, fixture.tracked, []).approved, true);
+});
+test('belian migration with one expression removed fails', () => {
+  const fixture = bellianMigrationFixture(); delete fixture.candidateMap.bellian.portrait.smile;
+  assert.equal(assessApprovedCanonicalMigration(fixture.baseMap, fixture.candidateMap, fixture.baseBaseline, fixture.candidateBaseline, fixture.tracked, []).approved, false);
+});
+test('belian migration with smile and blush swapped fails', () => {
+  const fixture = bellianMigrationFixture();
+  [fixture.candidateMap.bellian.portrait.smile, fixture.candidateMap.bellian.portrait.blush] = [fixture.candidateMap.bellian.portrait.blush, fixture.candidateMap.bellian.portrait.smile];
+  assert.equal(assessApprovedCanonicalMigration(fixture.baseMap, fixture.candidateMap, fixture.baseBaseline, fixture.candidateBaseline, fixture.tracked, []).approved, false);
+});
+test('belian migration to unrelated key fails', () => {
+  const fixture = bellianMigrationFixture(); fixture.candidateMap = { nemesis: fixture.candidateMap.bellian };
+  assert.equal(assessApprovedCanonicalMigration(fixture.baseMap, fixture.candidateMap, fixture.baseBaseline, fixture.candidateBaseline, fixture.tracked, []).approved, false);
+});
+test('belian and bellian both present fails migration', () => {
+  const fixture = bellianMigrationFixture(); fixture.candidateMap.belian = structuredClone(fixture.baseMap.belian);
+  assert.equal(assessApprovedCanonicalMigration(fixture.baseMap, fixture.candidateMap, fixture.baseBaseline, fixture.candidateBaseline, fixture.tracked, []).approved, false);
+});
+test('belian migration to wrong destination root fails', () => {
+  const fixture = bellianMigrationFixture(); fixture.candidateMap.bellian.default = '/assets/characters-v2/nemesis/portrait/default.webp';
+  assert.equal(assessApprovedCanonicalMigration(fixture.baseMap, fixture.candidateMap, fixture.baseBaseline, fixture.candidateBaseline, fixture.tracked, []).approved, false);
+});
+test('belian migration with unrelated baseline entry changed fails', () => {
+  const fixture = bellianMigrationFixture(); fixture.candidateBaseline.knownMissingReferences = [];
+  assert.equal(assessApprovedCanonicalMigration(fixture.baseMap, fixture.candidateMap, fixture.baseBaseline, fixture.candidateBaseline, fixture.tracked, []).approved, false);
+});
+test('exact Bellian baseline shrink passes', () => {
+  const fixture = bellianMigrationFixture();
+  assert.deepEqual(assessApprovedCanonicalMigration(fixture.baseMap, fixture.candidateMap, fixture.baseBaseline, fixture.candidateBaseline, fixture.tracked, []).errors, []);
+});
+test('migrated Bellian has 14 resolved references and no unreferenced assets', () => {
+  const repo = new URL('../..', import.meta.url);
+  const map = JSON.parse(readFileSync(new URL('../../assets/characterImagesV2.json', import.meta.url), 'utf8'));
+  const references = collectSchemaReferences({ bellian: map.bellian });
+  const tracked = execFileSync('git', ['ls-files', 'assets/characters-v2/bellian/*.webp', 'assets/characters-v2/bellian/**/*.webp'], { cwd: repo }).toString().trim().split('\n').filter(Boolean);
+  assert.equal(references.length, 14); assert.equal(references.every((reference) => existsSync(new URL(`../../${reference}`, import.meta.url))), true);
+  assert.deepEqual(tracked.filter((asset) => !references.includes(asset)), []);
+});
 
 test('known missing debt is tolerated', () => assert.deepEqual(compareDebt(['assets/characters-v2/a/portrait/default.webp'], ['assets/characters-v2/a/portrait/default.webp']).fresh, []));
 test('new missing debt fails comparison', () => assert.equal(compareDebt(['assets/characters-v2/a/portrait/default.webp'], []).fresh.length, 1));
