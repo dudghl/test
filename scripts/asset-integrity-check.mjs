@@ -40,6 +40,37 @@ export function validateReferenceOwnership(map) {
   return errors;
 }
 
+function validateSlotReference(value, label, expected, errors) {
+  if (value === null || value === undefined) return;
+  if (typeof value !== 'string') { errors.push(`${label} must be an asset path or null`); return; }
+  let normalized;
+  try { normalized = normalizeAssetPath(value); }
+  catch { errors.push(`${label} has invalid asset reference/root: ${value}`); return; }
+  if (expected && normalized !== expected) errors.push(`${label} must resolve to ${expected}, got ${normalized}`);
+}
+
+export function validateMapSemantics(map) {
+  const errors = [];
+  if (!map || typeof map !== 'object' || Array.isArray(map)) return ['map payload must be a character-keyed object'];
+  for (const [characterKey, payload] of Object.entries(map)) {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) { errors.push(`character ${characterKey} payload must be an object`); continue; }
+    const root = `${ACTIVE_ROOT}/${characterKey}`;
+    validateSlotReference(payload.default, `${characterKey}.default`, `${root}/portrait/default.webp`, errors);
+    validateSlotReference(payload.fullbodyDefault, `${characterKey}.fullbodyDefault`, `${root}/fullbody/default.webp`, errors);
+    if (!payload.portrait || typeof payload.portrait !== 'object' || Array.isArray(payload.portrait)) errors.push(`${characterKey}.portrait must be an object`);
+    else for (const [expression, value] of Object.entries(payload.portrait)) {
+      if (!EXPRESSIONS.has(expression)) { errors.push(`${characterKey}.portrait has unknown expression slot: ${expression}`); continue; }
+      validateSlotReference(value, `${characterKey}.portrait.${expression}`, `${root}/portrait/${expression}.webp`, errors);
+    }
+    if (!payload.supportAnchors || typeof payload.supportAnchors !== 'object' || Array.isArray(payload.supportAnchors)) errors.push(`${characterKey}.supportAnchors must be an object`);
+    else for (const [supportKey, value] of Object.entries(payload.supportAnchors))
+      validateSlotReference(value, `${characterKey}.supportAnchors.${supportKey}`, `${root}/support/${supportKey}.webp`, errors);
+    if (payload.eventCG && typeof payload.eventCG === 'object' && !Array.isArray(payload.eventCG))
+      for (const [eventKey, value] of Object.entries(payload.eventCG)) validateSlotReference(value, `${characterKey}.eventCG.${eventKey}`, undefined, errors);
+  }
+  return errors;
+}
+
 export function compareDebt(current, baseline) {
   const known = current.filter((item) => baseline.includes(item));
   const fresh = current.filter((item) => !baseline.includes(item));
@@ -208,11 +239,12 @@ export function runCheck(repo = process.cwd()) {
   const naming = validatePaths(images);
   const legacy = legacyViolations([jsonText, tsText]);
   const ownership = validateReferenceOwnership(jsonMap);
+  const semantics = validateMapSemantics(jsonMap);
   const parity = mapsEqual(jsonMap, tsMap);
-  const errors = [...validateBaseline(baseline), ...baselineGrowth.addedMissing.map((p)=>`candidate baseline adds a missing reference: ${p}`), ...baselineGrowth.addedUnreferenced.map((p)=>`candidate baseline adds an unreferenced asset: ${p}`), ...missingDebt.fresh.map((p)=>`new missing reference: ${p}`), ...unreferencedDebt.fresh.map((p)=>`new unreferenced asset: ${p}`), ...resolvedAssets.errors, ...assetChanges.errors, ...ownership, ...collisions, ...naming, ...legacy];
+  const errors = [...validateBaseline(baseline), ...baselineGrowth.addedMissing.map((p)=>`candidate baseline adds a missing reference: ${p}`), ...baselineGrowth.addedUnreferenced.map((p)=>`candidate baseline adds an unreferenced asset: ${p}`), ...missingDebt.fresh.map((p)=>`new missing reference: ${p}`), ...unreferencedDebt.fresh.map((p)=>`new unreferenced asset: ${p}`), ...resolvedAssets.errors, ...assetChanges.errors, ...ownership, ...semantics, ...collisions, ...naming, ...legacy];
   if (!parity) errors.push('JSON and TypeScript map payloads diverge');
   const warnings = [...missingDebt.known.map((p)=>`known missing reference: ${p}`), ...unreferencedDebt.known.map((p)=>`known unreferenced asset: ${p}`), ...missingDebt.resolved.map((p)=>`resolved missing baseline entry can be removed: ${p}`), ...unreferencedDebt.resolved.map((p)=>`resolved unreferenced baseline entry can be removed: ${p}`), ...resolvedAssets.safeRenames.map((p)=>`verified byte-preserving rename: ${p}`)];
-  return { ok: errors.length === 0, summary: { trackedImages: images.length, declaredReferences: references.length, missing: missing.length, knownMissing: missingDebt.known.length, newMissing: missingDebt.fresh.length, unreferenced: unreferenced.length, knownUnreferenced: unreferencedDebt.known.length, newUnreferenced: unreferencedDebt.fresh.length, baselineGrowth: baselineGrowth.addedMissing.length + baselineGrowth.addedUnreferenced.length, parity, ownership: ownership.length, collisions: collisions.length, naming: naming.length, legacy: legacy.length }, warnings, errors };
+  return { ok: errors.length === 0, summary: { trackedImages: images.length, declaredReferences: references.length, missing: missing.length, knownMissing: missingDebt.known.length, newMissing: missingDebt.fresh.length, unreferenced: unreferenced.length, knownUnreferenced: unreferencedDebt.known.length, newUnreferenced: unreferencedDebt.fresh.length, baselineGrowth: baselineGrowth.addedMissing.length + baselineGrowth.addedUnreferenced.length, parity, ownership: ownership.length, semanticSlots: semantics.length, collisions: collisions.length, naming: naming.length, legacy: legacy.length }, warnings, errors };
 }
 
 function print(result) {

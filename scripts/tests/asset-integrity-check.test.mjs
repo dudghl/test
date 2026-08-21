@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { assessAssetChanges, assessResolvedUnreferenced, collectReferences, compareBaselineGrowth, compareDebt, findCollisions, legacyViolations, mapsEqual, validatePaths, validateReferenceOwnership } from '../asset-integrity-check.mjs';
+import { assessAssetChanges, assessResolvedUnreferenced, collectReferences, compareBaselineGrowth, compareDebt, findCollisions, legacyViolations, mapsEqual, validateMapSemantics, validatePaths, validateReferenceOwnership } from '../asset-integrity-check.mjs';
 
 test('known missing debt is tolerated', () => assert.deepEqual(compareDebt(['assets/characters-v2/a/portrait/default.webp'], ['assets/characters-v2/a/portrait/default.webp']).fresh, []));
 test('new missing debt fails comparison', () => assert.equal(compareDebt(['assets/characters-v2/a/portrait/default.webp'], []).fresh.length, 1));
@@ -68,6 +68,25 @@ test('workflow uses the PR base SHA and range whitespace check', () => {
   assert.match(workflow, /git diff --check "\$ASSET_INTEGRITY_DIFF_BASE\.\.\.HEAD"/);
   assert.doesNotMatch(workflow, /^\s*run: git diff --check\s*$/m);
 });
+const semanticCharacter = (overrides = {}) => ({
+  default: '/assets/characters-v2/nemesis/portrait/default.webp',
+  fullbodyDefault: '/assets/characters-v2/nemesis/fullbody/default.webp',
+  portrait: { smile: '/assets/characters-v2/nemesis/portrait/smile.webp', blush: '/assets/characters-v2/nemesis/portrait/blush.webp' },
+  supportAnchors: { front_3q: '/assets/characters-v2/nemesis/support/front_3q.webp' }, eventCG: {}, ...overrides,
+});
+test('smile and blush semantic slot swap fails', () => {
+  const character = semanticCharacter({ portrait: { smile: '/assets/characters-v2/nemesis/portrait/blush.webp', blush: '/assets/characters-v2/nemesis/portrait/smile.webp' } });
+  assert.equal(validateMapSemantics({ nemesis: character }).length, 2);
+});
+test('correct semantic expression paths pass', () => assert.deepEqual(validateMapSemantics({ nemesis: semanticCharacter() }), []));
+test('explicit null semantic default passes', () => assert.deepEqual(validateMapSemantics({ nemesis: semanticCharacter({ default: null }) }), []));
+test('empty semantic expression map passes', () => assert.deepEqual(validateMapSemantics({ nemesis: semanticCharacter({ portrait: {} }) }), []));
+test('incorrect fullbody slot path fails', () => assert.equal(validateMapSemantics({ nemesis: semanticCharacter({ fullbodyDefault: '/assets/characters-v2/nemesis/portrait/default.webp' }) }).length, 1));
+test('incorrect support key path fails', () => assert.equal(validateMapSemantics({ nemesis: semanticCharacter({ supportAnchors: { front_3q: '/assets/characters-v2/nemesis/support/back_3q.webp' } }) }).length, 1));
+test('/asset path in an asset slot fails', () => assert.equal(validateMapSemantics({ nemesis: semanticCharacter({ default: '/asset/characters-v2/nemesis/portrait/default.webp' }) }).length, 1));
+test('malformed root in an asset slot fails', () => assert.equal(validateMapSemantics({ nemesis: semanticCharacter({ default: '/characters-v2/nemesis/portrait/default.webp' }) }).length, 1));
+test('canonical root-relative asset slot passes', () => assert.deepEqual(validateMapSemantics({ nemesis: semanticCharacter() }), []));
+test('external URL in an asset slot fails', () => assert.equal(validateMapSemantics({ nemesis: semanticCharacter({ default: 'https://example.com/default.webp' }) }).length, 1));
 test('map parity mismatch fails', () => assert.equal(mapsEqual({ a: 1 }, { a: 2 }), false));
 test('case-insensitive collision is found', () => assert.equal(findCollisions(['a/B.webp', 'a/b.webp']).length, 1));
 test('Unicode-normalized collision is found', () => assert.equal(findCollisions(['a/caf\u00e9.webp', 'a/cafe\u0301.webp']).length, 1));
