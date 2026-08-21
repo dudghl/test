@@ -7,6 +7,12 @@ import { fileURLToPath } from 'node:url';
 
 export const ACTIVE_ROOT = 'assets/characters-v2';
 export const EXPRESSIONS = new Set(['default','smile','blush','serious','angry','sad','shock','smug','annoyed','worried','confused','laugh','flustered']);
+const APPROVED_CANONICAL_MIGRATION = Object.freeze({
+  sourceKey: 'belian',
+  destinationKey: 'bellian',
+  sourcePrefix: '/assets/characters-v2/belian/',
+  destinationPrefix: '/assets/characters-v2/bellian/',
+});
 
 export function normalizeAssetPath(value) {
   if (typeof value !== 'string') throw new Error('asset reference must be a string');
@@ -148,6 +154,44 @@ export function compareBaselineGrowth(candidate, base) {
   };
 }
 
+function transformApprovedCanonicalPayload(value) {
+  const { sourcePrefix, destinationPrefix } = APPROVED_CANONICAL_MIGRATION;
+  if (typeof value === 'string') return value.startsWith(sourcePrefix) ? destinationPrefix + value.slice(sourcePrefix.length) : value;
+  if (Array.isArray(value)) return value.map(transformApprovedCanonicalPayload);
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, transformApprovedCanonicalPayload(item)]));
+  return value;
+}
+
+export function assessApprovedCanonicalMigration(baseMap, candidateMap, baseBaseline, candidateBaseline, tracked, changes, parity = true) {
+  const { sourceKey, destinationKey } = APPROVED_CANONICAL_MIGRATION;
+  if (!Object.hasOwn(baseMap ?? {}, sourceKey)) return { approved: false, errors: [], equivalentReferences: new Map() };
+
+  const errors = [];
+  const expectedPayload = transformApprovedCanonicalPayload(baseMap[sourceKey]);
+  if (Object.hasOwn(candidateMap ?? {}, sourceKey)) errors.push(`approved canonical migration must remove candidate key: ${sourceKey}`);
+  if (!Object.hasOwn(candidateMap ?? {}, destinationKey)) errors.push(`approved canonical migration must add candidate key: ${destinationKey}`);
+  else if (!mapsEqual(expectedPayload, candidateMap[destinationKey])) errors.push(`approved canonical migration changed protected payload beyond ${sourceKey} -> ${destinationKey}`);
+  if (!parity) errors.push('approved canonical migration requires exact JSON/TypeScript parity');
+  if (changes.length) errors.push('approved canonical migration must not rename, delete, or modify asset files');
+
+  const sourceReferences = [...new Set(collectSchemaReferences({ [sourceKey]: baseMap[sourceKey] }))].sort();
+  const destinationReferences = [...new Set(collectSchemaReferences({ [destinationKey]: expectedPayload }))].sort();
+  if (sourceReferences.length !== destinationReferences.length || sourceReferences.length !== 14)
+    errors.push('approved canonical migration must preserve exactly 14 Bellian semantic asset slots');
+  for (const reference of destinationReferences) if (!tracked.includes(reference)) errors.push(`approved canonical migration destination is not a tracked asset: ${reference}`);
+
+  const expectedMissing = baseBaseline.knownMissingReferences.filter((reference) => !sourceReferences.includes(reference));
+  const expectedUnreferenced = baseBaseline.knownUnreferencedAssets.filter((reference) => !destinationReferences.includes(reference));
+  if (!mapsEqual(candidateBaseline.knownMissingReferences, expectedMissing) || !mapsEqual(candidateBaseline.knownUnreferencedAssets, expectedUnreferenced))
+    errors.push('approved canonical migration baseline must shrink by exactly the resolved Bellian debt');
+
+  return {
+    approved: errors.length === 0,
+    errors,
+    equivalentReferences: new Map(sourceReferences.map((reference, index) => [reference, destinationReferences[index]])),
+  };
+}
+
 export function assessResolvedUnreferenced(resolved, tracked, references, changes, bytesEqual = () => false) {
   const errors = [];
   const safeRenames = [];
@@ -163,7 +207,7 @@ export function assessResolvedUnreferenced(resolved, tracked, references, change
   return { errors, safeRenames };
 }
 
-export function assessAssetChanges(baseTracked, baseReferences, tracked, references, changes, bytesEqual = () => false, baseSlots = new Map(), candidateSlots = new Map()) {
+export function assessAssetChanges(baseTracked, baseReferences, tracked, references, changes, bytesEqual = () => false, baseSlots = new Map(), candidateSlots = new Map(), equivalentReferences = new Map()) {
   const errors = [];
   const safeRenames = new Set();
   for (const change of changes.filter((item) => item.status.startsWith('R'))) {
@@ -178,8 +222,11 @@ export function assessAssetChanges(baseTracked, baseReferences, tracked, referen
       else safeRenames.add(change.oldPath);
     }
   }
-  for (const oldPath of baseReferences)
-    if (!references.includes(oldPath) && !safeRenames.has(oldPath)) errors.push(`protected-base asset reference was removed without a verified referenced replacement: ${oldPath}`);
+  for (const oldPath of baseReferences) {
+    const equivalent = equivalentReferences.get(oldPath);
+    if (!references.includes(oldPath) && !(equivalent && references.includes(equivalent)) && !safeRenames.has(oldPath))
+      errors.push(`protected-base asset reference was removed without a verified referenced replacement: ${oldPath}`);
+  }
   return { errors, safeRenames: [...safeRenames] };
 }
 
@@ -289,13 +336,15 @@ export function runCheck(repo = process.cwd()) {
   const missingDebt = compareDebt(missing, baseline.knownMissingReferences ?? []);
   const unreferencedDebt = compareDebt(unreferenced, baseline.knownUnreferencedAssets ?? []);
   const diffBase = process.env.ASSET_INTEGRITY_DIFF_BASE ?? 'HEAD';
+  const parity = mapsEqual(jsonMap, tsMap);
   let baselineGrowth = { addedMissing: [], addedUnreferenced: [] };
   let baseKnownUnreferenced = [];
+  let baseBaseline = baseline;
   let baseHasBaseline = true;
   try { execFileSync('git', ['cat-file', '-e', `${diffBase}:scripts/asset-integrity-baseline.json`], { cwd: repo, stdio: 'ignore' }); }
   catch { baseHasBaseline = false; }
   if (baseHasBaseline) {
-    const baseBaseline = JSON.parse(execFileSync('git', ['show', `${diffBase}:scripts/asset-integrity-baseline.json`], { cwd: repo }).toString());
+    baseBaseline = JSON.parse(execFileSync('git', ['show', `${diffBase}:scripts/asset-integrity-baseline.json`], { cwd: repo }).toString());
     const baseErrors = validateBaseline(baseBaseline);
     if (baseErrors.length) throw new Error(`protected-base baseline is invalid: ${baseErrors.join('; ')}`);
     baselineGrowth = compareBaselineGrowth(baseline, baseBaseline);
@@ -316,17 +365,19 @@ export function runCheck(repo = process.cwd()) {
   const baseReferences = [...new Set([...collectSchemaReferences(baseMap), ...collectSchemaReferences(baseTsMap)])].sort();
   const baseTracked = execFileSync('git', ['ls-tree', '-r', '--name-only', '-z', diffBase, '--', ACTIVE_ROOT], { cwd: repo }).toString().split('\0').filter(Boolean);
   const baseSlots = collectSemanticSlots(baseMap); const candidateSlots = collectSemanticSlots(jsonMap);
-  const assetChanges = assessAssetChanges(baseTracked, baseReferences, tracked, references, changes, bytesEqual, baseSlots, candidateSlots);
+  const canonicalMigration = assessApprovedCanonicalMigration(baseMap, jsonMap, baseBaseline, baseline, tracked, changes, parity);
+  const assetChanges = assessAssetChanges(baseTracked, baseReferences, tracked, references, changes, bytesEqual, baseSlots, candidateSlots, canonicalMigration.approved ? canonicalMigration.equivalentReferences : new Map());
   const baseMissing = baseReferences.filter((item) => !baseTracked.includes(item));
   const protectedUnreferencedErrors = assessProtectedUnreferenced(baseKnownUnreferenced, baseTracked, tracked, assetChanges.safeRenames, changes, baseMissing);
-  const structure = [...validateProtectedStructure(baseMap, jsonMap), ...validateProtectedStructure(baseTsMap, tsMap)];
+  const structureJsonMap = canonicalMigration.approved ? { ...jsonMap, belian: baseMap.belian } : jsonMap;
+  const structureTsMap = canonicalMigration.approved ? { ...tsMap, belian: baseTsMap.belian } : tsMap;
+  const structure = [...validateProtectedStructure(baseMap, structureJsonMap), ...validateProtectedStructure(baseTsMap, structureTsMap)];
   const collisions = findCollisions(tracked);
   const naming = validatePaths(images);
   const legacy = legacyViolations([jsonText, tsText]);
   const ownership = validateReferenceOwnership(jsonMap);
   const semantics = validateMapSemantics(jsonMap);
-  const parity = mapsEqual(jsonMap, tsMap);
-  const errors = [...validateBaseline(baseline), ...baselineGrowth.addedMissing.map((p)=>`candidate baseline adds a missing reference: ${p}`), ...baselineGrowth.addedUnreferenced.map((p)=>`candidate baseline adds an unreferenced asset: ${p}`), ...missingDebt.fresh.map((p)=>`new missing reference: ${p}`), ...unreferencedDebt.fresh.map((p)=>`new unreferenced asset: ${p}`), ...resolvedAssets.errors, ...assetChanges.errors, ...protectedUnreferencedErrors, ...structure, ...ownership, ...semantics, ...collisions, ...naming, ...legacy];
+  const errors = [...validateBaseline(baseline), ...baselineGrowth.addedMissing.map((p)=>`candidate baseline adds a missing reference: ${p}`), ...baselineGrowth.addedUnreferenced.map((p)=>`candidate baseline adds an unreferenced asset: ${p}`), ...missingDebt.fresh.map((p)=>`new missing reference: ${p}`), ...unreferencedDebt.fresh.map((p)=>`new unreferenced asset: ${p}`), ...resolvedAssets.errors, ...canonicalMigration.errors, ...assetChanges.errors, ...protectedUnreferencedErrors, ...structure, ...ownership, ...semantics, ...collisions, ...naming, ...legacy];
   if (!parity) errors.push('JSON and TypeScript map payloads diverge');
   const warnings = [...missingDebt.known.map((p)=>`known missing reference: ${p}`), ...unreferencedDebt.known.map((p)=>`known unreferenced asset: ${p}`), ...missingDebt.resolved.map((p)=>`resolved missing baseline entry can be removed: ${p}`), ...unreferencedDebt.resolved.map((p)=>`resolved unreferenced baseline entry can be removed: ${p}`), ...resolvedAssets.safeRenames.map((p)=>`verified byte-preserving rename: ${p}`)];
   return { ok: errors.length === 0, summary: { trackedImages: images.length, declaredReferences: references.length, missing: missing.length, knownMissing: missingDebt.known.length, newMissing: missingDebt.fresh.length, unreferenced: unreferenced.length, knownUnreferenced: unreferencedDebt.known.length, newUnreferenced: unreferencedDebt.fresh.length, baselineGrowth: baselineGrowth.addedMissing.length + baselineGrowth.addedUnreferenced.length, parity, protectedStructure: structure.length, ownership: ownership.length, semanticSlots: semantics.length, collisions: collisions.length, naming: naming.length, legacy: legacy.length }, warnings, errors };
