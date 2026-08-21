@@ -63,8 +63,9 @@ test('unchanged protected-base missing reference is tolerated', () => {
   assert.deepEqual(assessAssetChanges([], [path], [], [path], []).errors, []);
 });
 test('ordinary referenced byte-identical rename passes', () => {
-  const oldPath = 'assets/characters-v2/nemesis/portrait/default.webp'; const path = 'assets/characters-v2/nemesis/portrait/smile.webp';
-  assert.deepEqual(assessAssetChanges([oldPath], [oldPath], [path], [path], [{ status: 'R100', oldPath, path }], () => true).errors, []);
+  const oldPath = 'assets/characters-v2/nemesis/support/event_old.webp'; const path = 'assets/characters-v2/nemesis/support/event_new.webp';
+  const baseSlots = new Map([['nemesis.eventCG.intro', oldPath]]); const candidateSlots = new Map([['nemesis.eventCG.intro', path]]);
+  assert.deepEqual(assessAssetChanges([oldPath], [oldPath], [path], [path], [{ status: 'R100', oldPath, path }], () => true, baseSlots, candidateSlots).errors, []);
 });
 test('ordinary referenced rename with changed bytes fails', () => {
   const oldPath = 'assets/characters-v2/nemesis/portrait/default.webp'; const path = 'assets/characters-v2/nemesis/portrait/smile.webp';
@@ -83,8 +84,33 @@ test('protected known-unreferenced asset remaining tracked passes', () => {
   assert.deepEqual(assessProtectedUnreferenced([path], [path], [path], []), []);
 });
 test('protected known-unreferenced verified canonical rename passes', () => {
-  const path = 'assets/characters-v2/bellian/portrait/default.webp';
-  assert.deepEqual(assessProtectedUnreferenced([path], [path], ['assets/characters-v2/belian/portrait/default.webp'], [path]), []);
+  const path = 'assets/characters-v2/bellian/portrait/default.webp'; const destination = 'assets/characters-v2/belian/portrait/default.webp';
+  assert.deepEqual(assessProtectedUnreferenced([path], [path], [destination], [path], [{ status: 'R100', oldPath: path, path: destination }], [destination]), []);
+});
+test('referenced default to smile rename with metadata migration fails', () => {
+  const oldPath = 'assets/characters-v2/artemis/portrait/default.webp'; const path = 'assets/characters-v2/artemis/portrait/smile.webp';
+  const baseSlots = new Map([['artemis.default', oldPath]]); const candidateSlots = new Map([['artemis.portrait.smile', path]]);
+  assert.equal(assessAssetChanges([oldPath], [oldPath], [path], [path], [{ status: 'R100', oldPath, path }], () => true, baseSlots, candidateSlots).errors.length > 0, true);
+});
+test('referenced smile to blush rename fails semantic slot preservation', () => {
+  const oldPath = 'assets/characters-v2/nemesis/portrait/smile.webp'; const path = 'assets/characters-v2/nemesis/portrait/blush.webp';
+  const baseSlots = new Map([['nemesis.portrait.smile', oldPath]]); const candidateSlots = new Map([['nemesis.portrait.blush', path]]);
+  assert.equal(assessAssetChanges([oldPath], [oldPath], [path], [path], [{ status: 'R100', oldPath, path }], () => true, baseSlots, candidateSlots).errors.length > 0, true);
+});
+test('same-slot byte-identical event path rename passes', () => {
+  const oldPath = 'assets/characters-v2/nemesis/support/event_old.webp'; const path = 'assets/characters-v2/nemesis/support/event_new.webp';
+  const baseSlots = new Map([['nemesis.eventCG.intro', oldPath]]); const candidateSlots = new Map([['nemesis.eventCG.intro', path]]);
+  assert.deepEqual(assessAssetChanges([oldPath], [oldPath], [path], [path], [{ status: 'R100', oldPath, path }], () => true, baseSlots, candidateSlots).errors, []);
+});
+test('bellian canonical cleanup resolves protected missing equivalent path', () => {
+  const oldPath = 'assets/characters-v2/bellian/portrait/smile.webp'; const path = 'assets/characters-v2/belian/portrait/smile.webp';
+  const changes = [{ status: 'R100', oldPath, path }]; const asset = assessAssetChanges([oldPath], [path], [path], [path], changes, () => true);
+  assert.deepEqual(asset.errors, []); assert.deepEqual(assessProtectedUnreferenced([oldPath], [oldPath], [path], asset.safeRenames, changes, [path]), []);
+});
+test('bellian rename to unrelated character path fails protected replacement policy', () => {
+  const oldPath = 'assets/characters-v2/bellian/portrait/smile.webp'; const path = 'assets/characters-v2/nemesis/portrait/smile.webp';
+  const changes = [{ status: 'R100', oldPath, path }];
+  assert.equal(assessProtectedUnreferenced([oldPath], [oldPath], [path], [oldPath], changes, []).length, 1);
 });
 test('workflow is PR-only and uses only the PR base SHA', () => {
   const workflow = readFileSync(new URL('../../.github/workflows/asset-integrity.yml', import.meta.url), 'utf8');

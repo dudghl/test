@@ -46,6 +46,23 @@ export function collectSchemaReferences(map) {
   return output;
 }
 
+export function collectSemanticSlots(map) {
+  const slots = new Map();
+  const add = (slot, value) => { if (typeof value === 'string') try { slots.set(slot, normalizeAssetPath(value)); } catch {} };
+  if (!map || typeof map !== 'object' || Array.isArray(map)) return slots;
+  for (const [characterKey, payload] of Object.entries(map)) {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) continue;
+    add(`${characterKey}.default`, payload.default); add(`${characterKey}.fullbodyDefault`, payload.fullbodyDefault);
+    if (payload.portrait && typeof payload.portrait === 'object' && !Array.isArray(payload.portrait))
+      for (const [key, value] of Object.entries(payload.portrait)) if (EXPRESSIONS.has(key)) add(`${characterKey}.portrait.${key}`, value);
+    if (payload.supportAnchors && typeof payload.supportAnchors === 'object' && !Array.isArray(payload.supportAnchors))
+      for (const [key, value] of Object.entries(payload.supportAnchors)) add(`${characterKey}.supportAnchors.${key}`, value);
+    if (payload.eventCG && typeof payload.eventCG === 'object' && !Array.isArray(payload.eventCG))
+      for (const [key, value] of Object.entries(payload.eventCG)) add(`${characterKey}.eventCG.${key}`, value);
+  }
+  return slots;
+}
+
 export function validateReferenceOwnership(map) {
   const errors = [];
   if (!map || typeof map !== 'object' || Array.isArray(map)) return ['map payload must be a character-keyed object'];
@@ -120,24 +137,35 @@ export function assessResolvedUnreferenced(resolved, tracked, references, change
   return { errors, safeRenames };
 }
 
-export function assessAssetChanges(baseTracked, baseReferences, tracked, references, changes, bytesEqual = () => false) {
+export function assessAssetChanges(baseTracked, baseReferences, tracked, references, changes, bytesEqual = () => false, baseSlots = new Map(), candidateSlots = new Map()) {
   const errors = [];
   const safeRenames = new Set();
   for (const change of changes.filter((item) => item.status.startsWith('R'))) {
     const hashIdentical = bytesEqual(change.oldPath, change.path);
     if (change.status !== 'R100' || !hashIdentical) errors.push(`asset rename changed bytes: ${change.oldPath} -> ${change.path} (${change.status})`);
     else if (!references.includes(change.path)) errors.push(`asset rename destination is not referenced: ${change.path}`);
-    else safeRenames.add(change.oldPath);
+    else {
+      const protectedSlots = [...baseSlots].filter(([, value]) => value === change.oldPath).map(([slot]) => slot);
+      const movedSlots = protectedSlots.filter((slot) => candidateSlots.get(slot) !== change.path);
+      if (baseReferences.includes(change.oldPath) && protectedSlots.length === 0) errors.push(`asset rename has no recoverable protected semantic slot: ${change.oldPath}`);
+      else if (movedSlots.length) errors.push(`asset rename changed protected semantic slot(s) ${movedSlots.join(', ')}: ${change.oldPath} -> ${change.path}`);
+      else safeRenames.add(change.oldPath);
+    }
   }
   for (const oldPath of baseReferences)
     if (!references.includes(oldPath) && !safeRenames.has(oldPath)) errors.push(`protected-base asset reference was removed without a verified referenced replacement: ${oldPath}`);
   return { errors, safeRenames: [...safeRenames] };
 }
 
-export function assessProtectedUnreferenced(baseKnownUnreferenced, baseTracked, tracked, safeRenames) {
+export function assessProtectedUnreferenced(baseKnownUnreferenced, baseTracked, tracked, safeRenames, changes = [], baseMissing = []) {
   const errors = [];
-  for (const oldPath of baseKnownUnreferenced.filter((item) => baseTracked.includes(item)))
-    if (!tracked.includes(oldPath) && !safeRenames.includes(oldPath)) errors.push(`protected-base known-unreferenced asset was deleted without a verified referenced replacement: ${oldPath}`);
+  for (const oldPath of baseKnownUnreferenced.filter((item) => baseTracked.includes(item))) {
+    if (tracked.includes(oldPath)) continue;
+    const rename = changes.find((item) => item.status.startsWith('R') && item.oldPath === oldPath);
+    const sameRelativeRole = rename && oldPath.split('/').slice(3).join('/') === rename.path.split('/').slice(3).join('/');
+    if (!safeRenames.includes(oldPath) || !rename || !baseMissing.includes(rename.path) || !sameRelativeRole)
+      errors.push(`protected-base known-unreferenced asset was deleted without a semantically equivalent protected-missing replacement: ${oldPath}`);
+  }
   return errors;
 }
 
@@ -261,8 +289,10 @@ export function runCheck(repo = process.cwd()) {
   const baseTsMap = parseTypeScriptMap(execFileSync('git', ['show', `${diffBase}:assets/imageMapV2.ts`], { cwd: repo }).toString());
   const baseReferences = [...new Set([...collectSchemaReferences(baseMap), ...collectSchemaReferences(baseTsMap)])].sort();
   const baseTracked = execFileSync('git', ['ls-tree', '-r', '--name-only', '-z', diffBase, '--', ACTIVE_ROOT], { cwd: repo }).toString().split('\0').filter(Boolean);
-  const assetChanges = assessAssetChanges(baseTracked, baseReferences, tracked, references, changes, bytesEqual);
-  const protectedUnreferencedErrors = assessProtectedUnreferenced(baseKnownUnreferenced, baseTracked, tracked, assetChanges.safeRenames);
+  const baseSlots = collectSemanticSlots(baseMap); const candidateSlots = collectSemanticSlots(jsonMap);
+  const assetChanges = assessAssetChanges(baseTracked, baseReferences, tracked, references, changes, bytesEqual, baseSlots, candidateSlots);
+  const baseMissing = baseReferences.filter((item) => !baseTracked.includes(item));
+  const protectedUnreferencedErrors = assessProtectedUnreferenced(baseKnownUnreferenced, baseTracked, tracked, assetChanges.safeRenames, changes, baseMissing);
   const collisions = findCollisions(tracked);
   const naming = validatePaths(images);
   const legacy = legacyViolations([jsonText, tsText]);
