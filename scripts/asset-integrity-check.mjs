@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,6 +33,31 @@ export function compareDebt(current, baseline) {
   const fresh = current.filter((item) => !baseline.includes(item));
   const resolved = baseline.filter((item) => !current.includes(item));
   return { known, fresh, resolved };
+}
+
+export function assessResolvedUnreferenced(resolved, tracked, references, changes, bytesEqual = () => false) {
+  const errors = [];
+  const safeRenames = [];
+  for (const oldPath of resolved) {
+    if (tracked.includes(oldPath)) continue; // It became referenced in place.
+    const rename = changes.find((change) => change.status.startsWith('R') && change.oldPath === oldPath);
+    if (rename && tracked.includes(rename.path) && references.includes(rename.path) && bytesEqual(oldPath, rename.path)) {
+      safeRenames.push(`${oldPath} -> ${rename.path}`);
+      continue;
+    }
+    errors.push(`previously tracked baseline asset was deleted without a byte-preserving referenced replacement: ${oldPath}`);
+  }
+  return { errors, safeRenames };
+}
+
+export function parseNameStatus(output) {
+  const fields = output.split('\0').filter(Boolean); const changes = [];
+  for (let index = 0; index < fields.length;) {
+    const status = fields[index++];
+    if (status.startsWith('R') || status.startsWith('C')) changes.push({ status, oldPath: fields[index++], path: fields[index++] });
+    else changes.push({ status, path: fields[index++] });
+  }
+  return changes;
 }
 
 export function findCollisions(paths) {
@@ -117,14 +143,23 @@ export function runCheck(repo = process.cwd()) {
   const unreferenced = images.filter((p) => !references.includes(p));
   const missingDebt = compareDebt(missing, baseline.knownMissingReferences ?? []);
   const unreferencedDebt = compareDebt(unreferenced, baseline.knownUnreferencedAssets ?? []);
+  const diffBase = process.env.ASSET_INTEGRITY_DIFF_BASE ?? 'HEAD';
+  const changeOutput = execFileSync('git', ['diff', '--name-status', '-z', '-M', diffBase, '--', ACTIVE_ROOT], { cwd: repo }).toString();
+  const changes = parseNameStatus(changeOutput);
+  const hash = (buffer) => createHash('sha256').update(buffer).digest('hex');
+  const resolvedAssets = assessResolvedUnreferenced(unreferencedDebt.resolved, tracked, references, changes, (oldPath, newPath) => {
+    try {
+      const oldBytes = execFileSync('git', ['show', `${diffBase}:${oldPath}`], { cwd: repo, encoding: 'buffer', maxBuffer: 100 * 1024 * 1024 });
+      return hash(oldBytes) === hash(readFileSync(path.join(repo, newPath)));
+    } catch { return false; }
+  });
   const collisions = findCollisions(tracked);
   const naming = validatePaths(images);
   const legacy = legacyViolations([jsonText, tsText]);
   const parity = mapsEqual(jsonMap, tsMap);
-  const errors = [...validateBaseline(baseline), ...missingDebt.fresh.map((p)=>`new missing reference: ${p}`), ...unreferencedDebt.fresh.map((p)=>`new unreferenced asset: ${p}`), ...collisions, ...naming, ...legacy];
-  for (const asset of baseline.knownUnreferencedAssets ?? []) if (!tracked.includes(asset)) errors.push(`previously tracked baseline asset was deleted or renamed: ${asset}`);
+  const errors = [...validateBaseline(baseline), ...missingDebt.fresh.map((p)=>`new missing reference: ${p}`), ...unreferencedDebt.fresh.map((p)=>`new unreferenced asset: ${p}`), ...resolvedAssets.errors, ...collisions, ...naming, ...legacy];
   if (!parity) errors.push('JSON and TypeScript map payloads diverge');
-  const warnings = [...missingDebt.known.map((p)=>`known missing reference: ${p}`), ...unreferencedDebt.known.map((p)=>`known unreferenced asset: ${p}`), ...missingDebt.resolved.map((p)=>`resolved missing baseline entry can be removed: ${p}`), ...unreferencedDebt.resolved.map((p)=>`resolved unreferenced baseline entry can be removed: ${p}`)];
+  const warnings = [...missingDebt.known.map((p)=>`known missing reference: ${p}`), ...unreferencedDebt.known.map((p)=>`known unreferenced asset: ${p}`), ...missingDebt.resolved.map((p)=>`resolved missing baseline entry can be removed: ${p}`), ...unreferencedDebt.resolved.map((p)=>`resolved unreferenced baseline entry can be removed: ${p}`), ...resolvedAssets.safeRenames.map((p)=>`verified byte-preserving rename: ${p}`)];
   return { ok: errors.length === 0, summary: { trackedImages: images.length, declaredReferences: references.length, missing: missing.length, knownMissing: missingDebt.known.length, newMissing: missingDebt.fresh.length, unreferenced: unreferenced.length, knownUnreferenced: unreferencedDebt.known.length, newUnreferenced: unreferencedDebt.fresh.length, parity, collisions: collisions.length, naming: naming.length, legacy: legacy.length }, warnings, errors };
 }
 
