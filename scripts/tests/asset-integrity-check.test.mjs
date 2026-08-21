@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { assessResolvedUnreferenced, collectReferences, compareBaselineGrowth, compareDebt, findCollisions, legacyViolations, mapsEqual, validatePaths, validateReferenceOwnership } from '../asset-integrity-check.mjs';
+import { readFileSync } from 'node:fs';
+import { assessAssetChanges, assessResolvedUnreferenced, collectReferences, compareBaselineGrowth, compareDebt, findCollisions, legacyViolations, mapsEqual, validatePaths, validateReferenceOwnership } from '../asset-integrity-check.mjs';
 
 test('known missing debt is tolerated', () => assert.deepEqual(compareDebt(['assets/characters-v2/a/portrait/default.webp'], ['assets/characters-v2/a/portrait/default.webp']).fresh, []));
 test('new missing debt fails comparison', () => assert.equal(compareDebt(['assets/characters-v2/a/portrait/default.webp'], []).fresh.length, 1));
@@ -40,6 +41,32 @@ test('same-PR deletion and unreferenced baseline addition still fails baseline g
   const base = { knownMissingReferences: [], knownUnreferencedAssets: [] };
   const candidate = { knownMissingReferences: [], knownUnreferencedAssets: [path] };
   assert.deepEqual(compareBaselineGrowth(candidate, base).addedUnreferenced, [path]);
+});
+test('referenced asset and both map references deleted fails', () => {
+  const oldPath = 'assets/characters-v2/nemesis/portrait/default.webp';
+  assert.equal(assessAssetChanges([oldPath], [oldPath], [], [], [{ status: 'D', path: oldPath }]).errors.length, 1);
+});
+test('metadata-only removal leaving a tracked asset fails', () => {
+  const oldPath = 'assets/characters-v2/nemesis/portrait/default.webp';
+  assert.equal(assessAssetChanges([oldPath], [oldPath], [oldPath], [], []).errors.length, 1);
+});
+test('ordinary referenced byte-identical rename passes', () => {
+  const oldPath = 'assets/characters-v2/nemesis/portrait/default.webp'; const path = 'assets/characters-v2/nemesis/portrait/smile.webp';
+  assert.deepEqual(assessAssetChanges([oldPath], [oldPath], [path], [path], [{ status: 'R100', oldPath, path }], () => true).errors, []);
+});
+test('ordinary referenced rename with changed bytes fails', () => {
+  const oldPath = 'assets/characters-v2/nemesis/portrait/default.webp'; const path = 'assets/characters-v2/nemesis/portrait/smile.webp';
+  assert.equal(assessAssetChanges([oldPath], [oldPath], [path], [path], [{ status: 'R099', oldPath, path }], () => false).errors.length > 0, true);
+});
+test('rename to an unreferenced destination fails', () => {
+  const oldPath = 'assets/characters-v2/nemesis/portrait/default.webp'; const path = 'assets/characters-v2/nemesis/portrait/smile.webp';
+  assert.equal(assessAssetChanges([oldPath], [oldPath], [path], [], [{ status: 'R100', oldPath, path }], () => true).errors.length > 0, true);
+});
+test('workflow uses the PR base SHA and range whitespace check', () => {
+  const workflow = readFileSync(new URL('../../.github/workflows/asset-integrity.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /github\.event\.pull_request\.base\.sha/); assert.doesNotMatch(workflow, /HEAD\^/);
+  assert.match(workflow, /git diff --check "\$ASSET_INTEGRITY_DIFF_BASE\.\.\.HEAD"/);
+  assert.doesNotMatch(workflow, /^\s*run: git diff --check\s*$/m);
 });
 test('map parity mismatch fails', () => assert.equal(mapsEqual({ a: 1 }, { a: 2 }), false));
 test('case-insensitive collision is found', () => assert.equal(findCollisions(['a/B.webp', 'a/b.webp']).length, 1));
