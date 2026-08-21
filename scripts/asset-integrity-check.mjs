@@ -63,6 +63,31 @@ export function collectSemanticSlots(map) {
   return slots;
 }
 
+export function validateProtectedStructure(baseMap, candidateMap) {
+  const errors = [];
+  const nestedFields = ['portrait', 'supportAnchors', 'eventCG'];
+  const recognizedFields = ['default', 'fullbodyDefault', ...nestedFields];
+  for (const [characterKey, basePayload] of Object.entries(baseMap ?? {})) {
+    const candidatePayload = candidateMap?.[characterKey];
+    if (!candidatePayload || typeof candidatePayload !== 'object' || Array.isArray(candidatePayload)) {
+      errors.push(`protected character payload was removed: ${characterKey}`); continue;
+    }
+    for (const field of recognizedFields) {
+      if (!Object.hasOwn(basePayload, field)) continue;
+      if (!Object.hasOwn(candidatePayload, field)) { errors.push(`protected schema field was removed: ${characterKey}.${field}`); continue; }
+      if (!nestedFields.includes(field)) continue;
+      const baseNested = basePayload[field]; const candidateNested = candidatePayload[field];
+      if (!baseNested || typeof baseNested !== 'object' || Array.isArray(baseNested)) continue;
+      if (!candidateNested || typeof candidateNested !== 'object' || Array.isArray(candidateNested)) {
+        errors.push(`protected schema object changed shape: ${characterKey}.${field}`); continue;
+      }
+      for (const key of Object.keys(baseNested))
+        if (!Object.hasOwn(candidateNested, key)) errors.push(`protected schema field was removed: ${characterKey}.${field}.${key}`);
+    }
+  }
+  return errors;
+}
+
 export function validateReferenceOwnership(map) {
   const errors = [];
   if (!map || typeof map !== 'object' || Array.isArray(map)) return ['map payload must be a character-keyed object'];
@@ -293,16 +318,17 @@ export function runCheck(repo = process.cwd()) {
   const assetChanges = assessAssetChanges(baseTracked, baseReferences, tracked, references, changes, bytesEqual, baseSlots, candidateSlots);
   const baseMissing = baseReferences.filter((item) => !baseTracked.includes(item));
   const protectedUnreferencedErrors = assessProtectedUnreferenced(baseKnownUnreferenced, baseTracked, tracked, assetChanges.safeRenames, changes, baseMissing);
+  const structure = [...validateProtectedStructure(baseMap, jsonMap), ...validateProtectedStructure(baseTsMap, tsMap)];
   const collisions = findCollisions(tracked);
   const naming = validatePaths(images);
   const legacy = legacyViolations([jsonText, tsText]);
   const ownership = validateReferenceOwnership(jsonMap);
   const semantics = validateMapSemantics(jsonMap);
   const parity = mapsEqual(jsonMap, tsMap);
-  const errors = [...validateBaseline(baseline), ...baselineGrowth.addedMissing.map((p)=>`candidate baseline adds a missing reference: ${p}`), ...baselineGrowth.addedUnreferenced.map((p)=>`candidate baseline adds an unreferenced asset: ${p}`), ...missingDebt.fresh.map((p)=>`new missing reference: ${p}`), ...unreferencedDebt.fresh.map((p)=>`new unreferenced asset: ${p}`), ...resolvedAssets.errors, ...assetChanges.errors, ...protectedUnreferencedErrors, ...ownership, ...semantics, ...collisions, ...naming, ...legacy];
+  const errors = [...validateBaseline(baseline), ...baselineGrowth.addedMissing.map((p)=>`candidate baseline adds a missing reference: ${p}`), ...baselineGrowth.addedUnreferenced.map((p)=>`candidate baseline adds an unreferenced asset: ${p}`), ...missingDebt.fresh.map((p)=>`new missing reference: ${p}`), ...unreferencedDebt.fresh.map((p)=>`new unreferenced asset: ${p}`), ...resolvedAssets.errors, ...assetChanges.errors, ...protectedUnreferencedErrors, ...structure, ...ownership, ...semantics, ...collisions, ...naming, ...legacy];
   if (!parity) errors.push('JSON and TypeScript map payloads diverge');
   const warnings = [...missingDebt.known.map((p)=>`known missing reference: ${p}`), ...unreferencedDebt.known.map((p)=>`known unreferenced asset: ${p}`), ...missingDebt.resolved.map((p)=>`resolved missing baseline entry can be removed: ${p}`), ...unreferencedDebt.resolved.map((p)=>`resolved unreferenced baseline entry can be removed: ${p}`), ...resolvedAssets.safeRenames.map((p)=>`verified byte-preserving rename: ${p}`)];
-  return { ok: errors.length === 0, summary: { trackedImages: images.length, declaredReferences: references.length, missing: missing.length, knownMissing: missingDebt.known.length, newMissing: missingDebt.fresh.length, unreferenced: unreferenced.length, knownUnreferenced: unreferencedDebt.known.length, newUnreferenced: unreferencedDebt.fresh.length, baselineGrowth: baselineGrowth.addedMissing.length + baselineGrowth.addedUnreferenced.length, parity, ownership: ownership.length, semanticSlots: semantics.length, collisions: collisions.length, naming: naming.length, legacy: legacy.length }, warnings, errors };
+  return { ok: errors.length === 0, summary: { trackedImages: images.length, declaredReferences: references.length, missing: missing.length, knownMissing: missingDebt.known.length, newMissing: missingDebt.fresh.length, unreferenced: unreferenced.length, knownUnreferenced: unreferencedDebt.known.length, newUnreferenced: unreferencedDebt.fresh.length, baselineGrowth: baselineGrowth.addedMissing.length + baselineGrowth.addedUnreferenced.length, parity, protectedStructure: structure.length, ownership: ownership.length, semanticSlots: semantics.length, collisions: collisions.length, naming: naming.length, legacy: legacy.length }, warnings, errors };
 }
 
 function print(result) {

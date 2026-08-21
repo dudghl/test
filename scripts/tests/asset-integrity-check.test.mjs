@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { assessAssetChanges, assessProtectedUnreferenced, assessResolvedUnreferenced, collectReferences, collectSchemaReferences, compareBaselineGrowth, compareDebt, findCollisions, legacyViolations, mapsEqual, validateMapSemantics, validatePaths, validateReferenceOwnership } from '../asset-integrity-check.mjs';
+import { assessAssetChanges, assessProtectedUnreferenced, assessResolvedUnreferenced, collectReferences, collectSchemaReferences, compareBaselineGrowth, compareDebt, findCollisions, legacyViolations, mapsEqual, validateMapSemantics, validatePaths, validateProtectedStructure, validateReferenceOwnership } from '../asset-integrity-check.mjs';
 
 test('known missing debt is tolerated', () => assert.deepEqual(compareDebt(['assets/characters-v2/a/portrait/default.webp'], ['assets/characters-v2/a/portrait/default.webp']).fresh, []));
 test('new missing debt fails comparison', () => assert.equal(compareDebt(['assets/characters-v2/a/portrait/default.webp'], []).fresh.length, 1));
@@ -124,6 +124,44 @@ const semanticCharacter = (overrides = {}) => ({
   fullbodyDefault: '/assets/characters-v2/nemesis/fullbody/default.webp',
   portrait: { smile: '/assets/characters-v2/nemesis/portrait/smile.webp', blush: '/assets/characters-v2/nemesis/portrait/blush.webp' },
   supportAnchors: { front_3q: '/assets/characters-v2/nemesis/support/front_3q.webp' }, eventCG: {}, ...overrides,
+});
+const protectedStructureCharacter = (overrides = {}) => ({
+  default: null, fullbodyDefault: '/assets/characters-v2/anastasia/fullbody/default.webp',
+  portrait: {}, supportAnchors: {}, eventCG: {}, ...overrides,
+});
+test('protected explicit null default preserved passes structure validation', () => {
+  const base = { anastasia: protectedStructureCharacter() }; const candidate = { anastasia: protectedStructureCharacter() };
+  assert.deepEqual(validateProtectedStructure(base, candidate), []);
+});
+test('protected explicit null default removal fails structure validation', () => {
+  const base = { anastasia: protectedStructureCharacter() }; const candidatePayload = protectedStructureCharacter(); delete candidatePayload.default;
+  assert.equal(validateProtectedStructure(base, { anastasia: candidatePayload }).length, 1);
+});
+test('protected empty portrait removal fails structure validation', () => {
+  const base = { anastasia: protectedStructureCharacter() }; const candidatePayload = protectedStructureCharacter(); delete candidatePayload.portrait;
+  assert.equal(validateProtectedStructure(base, { anastasia: candidatePayload }).length, 1);
+});
+test('protected empty support and event maps cannot be removed', () => {
+  const base = { anastasia: protectedStructureCharacter() }; const candidatePayload = protectedStructureCharacter();
+  delete candidatePayload.supportAnchors; delete candidatePayload.eventCG;
+  assert.equal(validateProtectedStructure(base, { anastasia: candidatePayload }).length, 2);
+});
+test('protected expression key removal fails structure validation', () => {
+  const smile = '/assets/characters-v2/nemesis/portrait/smile.webp';
+  const base = { nemesis: protectedStructureCharacter({ portrait: { smile } }) };
+  const candidate = { nemesis: protectedStructureCharacter({ portrait: {} }) };
+  assert.equal(validateProtectedStructure(base, candidate).length, 1);
+});
+test('adding a valid expression key does not fail protected structure', () => {
+  const smile = '/assets/characters-v2/nemesis/portrait/smile.webp';
+  const base = { nemesis: protectedStructureCharacter({ portrait: {} }) };
+  const candidate = { nemesis: protectedStructureCharacter({ portrait: { smile } }) };
+  assert.deepEqual(validateProtectedStructure(base, candidate), []);
+});
+test('synchronized JSON and TS structural corruption still fails', () => {
+  const base = { anastasia: protectedStructureCharacter() }; const corruptPayload = protectedStructureCharacter(); delete corruptPayload.default;
+  const corruptJson = { anastasia: corruptPayload }; const corruptTs = structuredClone(corruptJson);
+  assert.equal(mapsEqual(corruptJson, corruptTs), true); assert.equal(validateProtectedStructure(base, corruptJson).length, 1);
 });
 test('smile and blush semantic slot swap fails', () => {
   const character = semanticCharacter({ portrait: { smile: '/assets/characters-v2/nemesis/portrait/blush.webp', blush: '/assets/characters-v2/nemesis/portrait/smile.webp' } });
