@@ -1,0 +1,26 @@
+name: Lumensia Asset Integrity
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check asset integrity
+        env:
+          ASSET_INTEGRITY_DIFF_BASE: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/asset-integrity-check.mjs
+      - name: Check whitespace
+        env:
+          ASSET_INTEGRITY_DIFF_BASE: ${{ github.event.pull_request.base.sha }}
+        run: git diff --check "$ASSET_INTEGRITY_DIFF_BASE...HEAD"
