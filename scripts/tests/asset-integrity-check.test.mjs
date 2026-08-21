@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { assessAssetChanges, assessResolvedUnreferenced, collectReferences, compareBaselineGrowth, compareDebt, findCollisions, legacyViolations, mapsEqual, validateMapSemantics, validatePaths, validateReferenceOwnership } from '../asset-integrity-check.mjs';
+import { assessAssetChanges, assessProtectedUnreferenced, assessResolvedUnreferenced, collectReferences, compareBaselineGrowth, compareDebt, findCollisions, legacyViolations, mapsEqual, validateMapSemantics, validatePaths, validateReferenceOwnership } from '../asset-integrity-check.mjs';
 
 test('known missing debt is tolerated', () => assert.deepEqual(compareDebt(['assets/characters-v2/a/portrait/default.webp'], ['assets/characters-v2/a/portrait/default.webp']).fresh, []));
 test('new missing debt fails comparison', () => assert.equal(compareDebt(['assets/characters-v2/a/portrait/default.webp'], []).fresh.length, 1));
@@ -50,6 +50,18 @@ test('metadata-only removal leaving a tracked asset fails', () => {
   const oldPath = 'assets/characters-v2/nemesis/portrait/default.webp';
   assert.equal(assessAssetChanges([oldPath], [oldPath], [oldPath], [], []).errors.length, 1);
 });
+test('protected-base missing forward-declared reference removal fails', () => {
+  const path = 'assets/characters-v2/future/portrait/default.webp';
+  assert.equal(assessAssetChanges([], [path], [], [], []).errors.length, 1);
+});
+test('protected-base existing reference removal fails', () => {
+  const path = 'assets/characters-v2/nemesis/portrait/default.webp';
+  assert.equal(assessAssetChanges([path], [path], [path], [], []).errors.length, 1);
+});
+test('unchanged protected-base missing reference is tolerated', () => {
+  const path = 'assets/characters-v2/future/portrait/default.webp';
+  assert.deepEqual(assessAssetChanges([], [path], [], [path], []).errors, []);
+});
 test('ordinary referenced byte-identical rename passes', () => {
   const oldPath = 'assets/characters-v2/nemesis/portrait/default.webp'; const path = 'assets/characters-v2/nemesis/portrait/smile.webp';
   assert.deepEqual(assessAssetChanges([oldPath], [oldPath], [path], [path], [{ status: 'R100', oldPath, path }], () => true).errors, []);
@@ -61,6 +73,18 @@ test('ordinary referenced rename with changed bytes fails', () => {
 test('rename to an unreferenced destination fails', () => {
   const oldPath = 'assets/characters-v2/nemesis/portrait/default.webp'; const path = 'assets/characters-v2/nemesis/portrait/smile.webp';
   assert.equal(assessAssetChanges([oldPath], [oldPath], [path], [], [{ status: 'R100', oldPath, path }], () => true).errors.length > 0, true);
+});
+test('protected known-unreferenced asset and candidate baseline entry deletion fails', () => {
+  const path = 'assets/characters-v2/bellian/portrait/default.webp';
+  assert.equal(assessProtectedUnreferenced([path], [path], [], []).length, 1);
+});
+test('protected known-unreferenced asset remaining tracked passes', () => {
+  const path = 'assets/characters-v2/bellian/portrait/default.webp';
+  assert.deepEqual(assessProtectedUnreferenced([path], [path], [path], []), []);
+});
+test('protected known-unreferenced verified canonical rename passes', () => {
+  const path = 'assets/characters-v2/bellian/portrait/default.webp';
+  assert.deepEqual(assessProtectedUnreferenced([path], [path], ['assets/characters-v2/belian/portrait/default.webp'], [path]), []);
 });
 test('workflow uses the PR base SHA and range whitespace check', () => {
   const workflow = readFileSync(new URL('../../.github/workflows/asset-integrity.yml', import.meta.url), 'utf8');

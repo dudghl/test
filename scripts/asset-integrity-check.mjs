@@ -109,12 +109,16 @@ export function assessAssetChanges(baseTracked, baseReferences, tracked, referen
     else if (!references.includes(change.path)) errors.push(`asset rename destination is not referenced: ${change.path}`);
     else safeRenames.add(change.oldPath);
   }
-  for (const oldPath of baseReferences.filter((item) => baseTracked.includes(item))) {
-    if (!tracked.includes(oldPath)) {
-      if (!safeRenames.has(oldPath)) errors.push(`protected-base referenced asset was deleted without a verified referenced replacement: ${oldPath}`);
-    } else if (!references.includes(oldPath)) errors.push(`protected-base referenced asset became unreferenced: ${oldPath}`);
-  }
+  for (const oldPath of baseReferences)
+    if (!references.includes(oldPath) && !safeRenames.has(oldPath)) errors.push(`protected-base asset reference was removed without a verified referenced replacement: ${oldPath}`);
   return { errors, safeRenames: [...safeRenames] };
+}
+
+export function assessProtectedUnreferenced(baseKnownUnreferenced, baseTracked, tracked, safeRenames) {
+  const errors = [];
+  for (const oldPath of baseKnownUnreferenced.filter((item) => baseTracked.includes(item)))
+    if (!tracked.includes(oldPath) && !safeRenames.includes(oldPath)) errors.push(`protected-base known-unreferenced asset was deleted without a verified referenced replacement: ${oldPath}`);
+  return errors;
 }
 
 export function parseNameStatus(output) {
@@ -212,6 +216,7 @@ export function runCheck(repo = process.cwd()) {
   const unreferencedDebt = compareDebt(unreferenced, baseline.knownUnreferencedAssets ?? []);
   const diffBase = process.env.ASSET_INTEGRITY_DIFF_BASE ?? 'HEAD';
   let baselineGrowth = { addedMissing: [], addedUnreferenced: [] };
+  let baseKnownUnreferenced = [];
   let baseHasBaseline = true;
   try { execFileSync('git', ['cat-file', '-e', `${diffBase}:scripts/asset-integrity-baseline.json`], { cwd: repo, stdio: 'ignore' }); }
   catch { baseHasBaseline = false; }
@@ -220,6 +225,7 @@ export function runCheck(repo = process.cwd()) {
     const baseErrors = validateBaseline(baseBaseline);
     if (baseErrors.length) throw new Error(`protected-base baseline is invalid: ${baseErrors.join('; ')}`);
     baselineGrowth = compareBaselineGrowth(baseline, baseBaseline);
+    baseKnownUnreferenced = baseBaseline.knownUnreferencedAssets;
   }
   const changeOutput = execFileSync('git', ['diff', '--name-status', '-z', '-M', diffBase, '--', ACTIVE_ROOT], { cwd: repo }).toString();
   const changes = parseNameStatus(changeOutput);
@@ -232,16 +238,18 @@ export function runCheck(repo = process.cwd()) {
   };
   const resolvedAssets = assessResolvedUnreferenced(unreferencedDebt.resolved, tracked, references, changes, bytesEqual);
   const baseMap = JSON.parse(execFileSync('git', ['show', `${diffBase}:assets/characterImagesV2.json`], { cwd: repo }).toString());
-  const baseReferences = [...new Set(collectReferences(baseMap))].sort();
+  const baseTsMap = parseTypeScriptMap(execFileSync('git', ['show', `${diffBase}:assets/imageMapV2.ts`], { cwd: repo }).toString());
+  const baseReferences = [...new Set([...collectReferences(baseMap), ...collectReferences(baseTsMap)])].sort();
   const baseTracked = execFileSync('git', ['ls-tree', '-r', '--name-only', '-z', diffBase, '--', ACTIVE_ROOT], { cwd: repo }).toString().split('\0').filter(Boolean);
   const assetChanges = assessAssetChanges(baseTracked, baseReferences, tracked, references, changes, bytesEqual);
+  const protectedUnreferencedErrors = assessProtectedUnreferenced(baseKnownUnreferenced, baseTracked, tracked, assetChanges.safeRenames);
   const collisions = findCollisions(tracked);
   const naming = validatePaths(images);
   const legacy = legacyViolations([jsonText, tsText]);
   const ownership = validateReferenceOwnership(jsonMap);
   const semantics = validateMapSemantics(jsonMap);
   const parity = mapsEqual(jsonMap, tsMap);
-  const errors = [...validateBaseline(baseline), ...baselineGrowth.addedMissing.map((p)=>`candidate baseline adds a missing reference: ${p}`), ...baselineGrowth.addedUnreferenced.map((p)=>`candidate baseline adds an unreferenced asset: ${p}`), ...missingDebt.fresh.map((p)=>`new missing reference: ${p}`), ...unreferencedDebt.fresh.map((p)=>`new unreferenced asset: ${p}`), ...resolvedAssets.errors, ...assetChanges.errors, ...ownership, ...semantics, ...collisions, ...naming, ...legacy];
+  const errors = [...validateBaseline(baseline), ...baselineGrowth.addedMissing.map((p)=>`candidate baseline adds a missing reference: ${p}`), ...baselineGrowth.addedUnreferenced.map((p)=>`candidate baseline adds an unreferenced asset: ${p}`), ...missingDebt.fresh.map((p)=>`new missing reference: ${p}`), ...unreferencedDebt.fresh.map((p)=>`new unreferenced asset: ${p}`), ...resolvedAssets.errors, ...assetChanges.errors, ...protectedUnreferencedErrors, ...ownership, ...semantics, ...collisions, ...naming, ...legacy];
   if (!parity) errors.push('JSON and TypeScript map payloads diverge');
   const warnings = [...missingDebt.known.map((p)=>`known missing reference: ${p}`), ...unreferencedDebt.known.map((p)=>`known unreferenced asset: ${p}`), ...missingDebt.resolved.map((p)=>`resolved missing baseline entry can be removed: ${p}`), ...unreferencedDebt.resolved.map((p)=>`resolved unreferenced baseline entry can be removed: ${p}`), ...resolvedAssets.safeRenames.map((p)=>`verified byte-preserving rename: ${p}`)];
   return { ok: errors.length === 0, summary: { trackedImages: images.length, declaredReferences: references.length, missing: missing.length, knownMissing: missingDebt.known.length, newMissing: missingDebt.fresh.length, unreferenced: unreferenced.length, knownUnreferenced: unreferencedDebt.known.length, newUnreferenced: unreferencedDebt.fresh.length, baselineGrowth: baselineGrowth.addedMissing.length + baselineGrowth.addedUnreferenced.length, parity, ownership: ownership.length, semanticSlots: semantics.length, collisions: collisions.length, naming: naming.length, legacy: legacy.length }, warnings, errors };
