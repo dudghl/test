@@ -1,0 +1,21 @@
+name: Lumensia Asset Integrity
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check asset integrity
+        run: node scripts/asset-integrity-check.mjs
+      - name: Check whitespace
+        run: git diff --check
