@@ -20,6 +20,21 @@ const bellianMigrationFixture = () => {
   const candidateBaseline = { knownMissingReferences: [unrelatedMissing], knownUnreferencedAssets: [] };
   return { baseMap, candidateMap, baseBaseline, candidateBaseline, tracked: destination };
 };
+const pendingMigrationFixture = (sourceKey, destinationKey) => {
+  const baseMap = { [sourceKey]: bellianPayload(sourceKey) };
+  const candidateMap = { [destinationKey]: bellianPayload(destinationKey) };
+  const source = collectSchemaReferences(baseMap);
+  const destination = collectSchemaReferences(candidateMap);
+  const unrelatedMissing = 'assets/characters-v2/future/portrait/default.webp';
+  return {
+    baseMap, candidateMap, tracked: [],
+    baseBaseline: { knownMissingReferences: [unrelatedMissing, ...source], knownUnreferencedAssets: [] },
+    candidateBaseline: { knownMissingReferences: [unrelatedMissing, ...destination], knownUnreferencedAssets: [] },
+  };
+};
+const assessPending = (fixture) => assessApprovedCanonicalMigration(
+  fixture.baseMap, fixture.candidateMap, fixture.baseBaseline, fixture.candidateBaseline, fixture.tracked, [],
+);
 
 test('exact belian to bellian canonical migration passes', () => {
   const fixture = bellianMigrationFixture();
@@ -61,6 +76,72 @@ test('migrated Bellian has 14 resolved references and no unreferenced assets', (
   const tracked = execFileSync('git', ['ls-files', 'assets/characters-v2/bellian/*.webp', 'assets/characters-v2/bellian/**/*.webp'], { cwd: repo }).toString().trim().split('\n').filter(Boolean);
   assert.equal(references.length, 14); assert.equal(references.every((reference) => existsSync(new URL(`../../${reference}`, import.meta.url))), true);
   assert.deepEqual(tracked.filter((asset) => !references.includes(asset)), []);
+});
+
+test('exact karne to carne forward-declaration and baseline migration passes', () => {
+  assert.equal(assessPending(pendingMigrationFixture('karne', 'carne')).approved, true);
+});
+test('karne migration to an unrelated key fails', () => {
+  const fixture = pendingMigrationFixture('karne', 'carne'); fixture.candidateMap = { unrelated: fixture.candidateMap.carne };
+  assert.equal(assessPending(fixture).approved, false);
+});
+test('carne migration with an expression removed fails', () => {
+  const fixture = pendingMigrationFixture('karne', 'carne'); delete fixture.candidateMap.carne.portrait.smile;
+  assert.equal(assessPending(fixture).approved, false);
+});
+test('carne migration with semantic slots swapped fails', () => {
+  const fixture = pendingMigrationFixture('karne', 'carne');
+  [fixture.candidateMap.carne.portrait.smile, fixture.candidateMap.carne.portrait.blush] = [fixture.candidateMap.carne.portrait.blush, fixture.candidateMap.carne.portrait.smile];
+  assert.equal(assessPending(fixture).approved, false);
+});
+test('removing old karne baseline debt without the carne equivalent fails', () => {
+  const fixture = pendingMigrationFixture('karne', 'carne'); fixture.candidateBaseline.knownMissingReferences.pop();
+  assert.equal(assessPending(fixture).approved, false);
+});
+test('adding carne baseline debt without matching old karne debt fails', () => {
+  const fixture = pendingMigrationFixture('karne', 'carne'); fixture.baseBaseline.knownMissingReferences.pop();
+  assert.equal(assessPending(fixture).approved, false);
+});
+test('exact pria to fria forward-declaration and baseline migration passes', () => {
+  assert.equal(assessPending(pendingMigrationFixture('pria', 'fria')).approved, true);
+});
+test('pria migration to an unrelated key fails', () => {
+  const fixture = pendingMigrationFixture('pria', 'fria'); fixture.candidateMap = { unrelated: fixture.candidateMap.fria };
+  assert.equal(assessPending(fixture).approved, false);
+});
+test('fria migration with semantic structure changed fails', () => {
+  const fixture = pendingMigrationFixture('pria', 'fria'); fixture.candidateMap.fria.supportAnchors = { sitting: '/assets/characters-v2/fria/support/sitting.webp' };
+  assert.equal(assessPending(fixture).approved, false);
+});
+test('fria migration with baseline debt growth fails', () => {
+  const fixture = pendingMigrationFixture('pria', 'fria'); fixture.candidateBaseline.knownMissingReferences.push('assets/characters-v2/fria/support/sitting.webp');
+  assert.equal(assessPending(fixture).approved, false);
+});
+test('arbitrary key migrations are not approved', () => {
+  assert.equal(assessPending(pendingMigrationFixture('typo', 'canonical')).approved, false);
+});
+test('both pending migrations preserve the total missing-debt count', () => {
+  const carne = pendingMigrationFixture('karne', 'carne');
+  const fria = pendingMigrationFixture('pria', 'fria');
+  const fixture = {
+    baseMap: { ...carne.baseMap, ...fria.baseMap }, candidateMap: { ...carne.candidateMap, ...fria.candidateMap }, tracked: [],
+    baseBaseline: { knownMissingReferences: [...carne.baseBaseline.knownMissingReferences, ...fria.baseBaseline.knownMissingReferences.slice(1)], knownUnreferencedAssets: [] },
+    candidateBaseline: { knownMissingReferences: [...carne.candidateBaseline.knownMissingReferences, ...fria.candidateBaseline.knownMissingReferences.slice(1)], knownUnreferencedAssets: [] },
+  };
+  assert.equal(assessPending(fixture).approved, true);
+  assert.equal(fixture.candidateBaseline.knownMissingReferences.length, fixture.baseBaseline.knownMissingReferences.length);
+});
+test('repository canonical pending identities preserve debt, assets, and protected characters', () => {
+  const map = JSON.parse(readFileSync(new URL('../../assets/characterImagesV2.json', import.meta.url), 'utf8'));
+  const baseline = JSON.parse(readFileSync(new URL('../asset-integrity-baseline.json', import.meta.url), 'utf8'));
+  assert.equal(baseline.knownMissingReferences.length, 148);
+  assert.deepEqual(baseline.knownUnreferencedAssets, []);
+  for (const key of ['carne', 'fria', 'lucia', 'bellian']) assert.equal(Object.hasOwn(map, key), true);
+  for (const key of ['karne', 'pria', 'belian']) assert.equal(Object.hasOwn(map, key), false);
+  for (const key of ['carne', 'fria']) {
+    assert.equal(existsSync(new URL(`../../assets/characters-v2/${key}`, import.meta.url)), false);
+    assert.equal(baseline.knownMissingReferences.some((reference) => reference.startsWith(`assets/characters-v2/${key}/`)), true);
+  }
 });
 
 test('known missing debt is tolerated', () => assert.deepEqual(compareDebt(['assets/characters-v2/a/portrait/default.webp'], ['assets/characters-v2/a/portrait/default.webp']).fresh, []));
