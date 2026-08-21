@@ -31,7 +31,7 @@ export function collectReferences(value, output = []) {
 export function collectSchemaReferences(map) {
   const output = [];
   const add = (value) => {
-    if (typeof value !== 'string') return;
+    if (typeof value !== 'string' || !value.startsWith('/assets/')) return;
     try { output.push(normalizeAssetPath(value)); } catch { /* Semantic validation reports the slot-specific error. */ }
   };
   if (!map || typeof map !== 'object' || Array.isArray(map)) return output;
@@ -103,6 +103,7 @@ export function validateReferenceOwnership(map) {
 function validateSlotReference(value, label, expected, errors) {
   if (value === null || value === undefined) return;
   if (typeof value !== 'string') { errors.push(`${label} must be an asset path or null`); return; }
+  if (!value.startsWith('/assets/')) { errors.push(`${label} must be a root-absolute /assets/ reference: ${value}`); return; }
   let normalized;
   try { normalized = normalizeAssetPath(value); }
   catch { errors.push(`${label} has invalid asset reference/root: ${value}`); return; }
