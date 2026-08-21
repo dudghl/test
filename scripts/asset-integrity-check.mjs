@@ -11,6 +11,7 @@ const APPROVED_CANONICAL_MIGRATIONS = Object.freeze([
   Object.freeze({ sourceKey: 'belian', destinationKey: 'bellian', kind: 'resolved-assets' }),
   Object.freeze({ sourceKey: 'karne', destinationKey: 'carne', kind: 'forward-declaration' }),
   Object.freeze({ sourceKey: 'pria', destinationKey: 'fria', kind: 'forward-declaration' }),
+  Object.freeze({ sourceKey: 'mirabel', destinationKey: 'mirabelle', kind: 'byte-preserving-rename' }),
 ].map((migration) => Object.freeze({
   ...migration,
   sourcePrefix: `/assets/characters-v2/${migration.sourceKey}/`,
@@ -165,7 +166,7 @@ function transformApprovedCanonicalPayload(value, migration) {
   return value;
 }
 
-export function assessApprovedCanonicalMigration(baseMap, candidateMap, baseBaseline, candidateBaseline, tracked, changes, parity = true) {
+export function assessApprovedCanonicalMigration(baseMap, candidateMap, baseBaseline, candidateBaseline, tracked, changes, parity = true, bytesEqual = () => false) {
   const active = APPROVED_CANONICAL_MIGRATIONS.filter(({ sourceKey }) => Object.hasOwn(baseMap ?? {}, sourceKey));
   if (!active.length) return { approved: false, errors: [], equivalentReferences: new Map(), migrations: [] };
   const errors = [];
@@ -188,16 +189,29 @@ export function assessApprovedCanonicalMigration(baseMap, candidateMap, baseBase
       for (const reference of destinationReferences) if (!tracked.includes(reference)) errors.push(`approved canonical migration destination is not a tracked asset: ${reference}`);
       expectedMissing = expectedMissing.filter((reference) => !sourceReferences.includes(reference));
       expectedUnreferenced = expectedUnreferenced.filter((reference) => !destinationReferences.includes(reference));
-    } else {
+    } else if (kind === 'forward-declaration') {
       for (const reference of destinationReferences) if (tracked.includes(reference)) errors.push(`approved forward declaration unexpectedly has a physical asset: ${reference}`);
       expectedMissing = expectedMissing.map((reference) => {
         const index = sourceReferences.indexOf(reference);
         return index < 0 ? reference : destinationReferences[index];
       });
+    } else {
+      for (const [index, sourceReference] of sourceReferences.entries()) {
+        const destinationReference = destinationReferences[index];
+        const rename = changes.find((change) => change.oldPath === sourceReference && change.path === destinationReference);
+        if (!rename || rename.status !== 'R100') errors.push(`approved canonical migration requires an exact Git rename: ${sourceReference} -> ${destinationReference}`);
+        else if (!bytesEqual(sourceReference, destinationReference)) errors.push(`approved canonical migration changed image bytes: ${sourceReference} -> ${destinationReference}`);
+        if (!tracked.includes(destinationReference)) errors.push(`approved canonical migration destination is not a tracked asset: ${destinationReference}`);
+      }
     }
   }
   if (!parity) errors.push('approved canonical migration requires exact JSON/TypeScript parity');
-  if (changes.length) errors.push('approved canonical migration must not rename, delete, or modify asset files');
+  const allowsRenames = active.every(({ kind }) => kind === 'byte-preserving-rename');
+  const expectedRenameCount = allowsRenames
+    ? active.reduce((count, { sourceKey }) => count + new Set(collectSchemaReferences({ [sourceKey]: baseMap[sourceKey] })).size, 0)
+    : 0;
+  if ((!allowsRenames && changes.length) || (allowsRenames && changes.length !== expectedRenameCount))
+    errors.push('approved canonical migration has unexpected asset additions, removals, modifications, or renames');
   if (!mapsEqual(candidateBaseline.knownMissingReferences, expectedMissing) || !mapsEqual(candidateBaseline.knownUnreferencedAssets, expectedUnreferenced))
     errors.push('approved canonical migration baseline must change one-for-one with canonical references');
 
@@ -382,12 +396,15 @@ export function runCheck(repo = process.cwd()) {
   const baseReferences = [...new Set([...collectSchemaReferences(baseMap), ...collectSchemaReferences(baseTsMap)])].sort();
   const baseTracked = execFileSync('git', ['ls-tree', '-r', '--name-only', '-z', diffBase, '--', ACTIVE_ROOT], { cwd: repo }).toString().split('\0').filter(Boolean);
   const baseSlots = collectSemanticSlots(baseMap); const candidateSlots = collectSemanticSlots(jsonMap);
-  const canonicalMigration = assessApprovedCanonicalMigration(baseMap, jsonMap, baseBaseline, baseline, tracked, changes, parity);
+  const canonicalMigration = assessApprovedCanonicalMigration(baseMap, jsonMap, baseBaseline, baseline, tracked, changes, parity, bytesEqual);
   if (canonicalMigration.approved) {
     const approvedDestinations = new Set(canonicalMigration.equivalentReferences.values());
     baselineGrowth.addedMissing = baselineGrowth.addedMissing.filter((reference) => !approvedDestinations.has(reference));
   }
-  const assetChanges = assessAssetChanges(baseTracked, baseReferences, tracked, references, changes, bytesEqual, baseSlots, candidateSlots, canonicalMigration.approved ? canonicalMigration.equivalentReferences : new Map());
+  const canonicalRenameSources = new Set(canonicalMigration.approved && canonicalMigration.migrations.every(({ kind }) => kind === 'byte-preserving-rename')
+    ? canonicalMigration.equivalentReferences.keys() : []);
+  const ordinaryChanges = changes.filter((change) => !canonicalRenameSources.has(change.oldPath));
+  const assetChanges = assessAssetChanges(baseTracked, baseReferences, tracked, references, ordinaryChanges, bytesEqual, baseSlots, candidateSlots, canonicalMigration.approved ? canonicalMigration.equivalentReferences : new Map());
   const baseMissing = baseReferences.filter((item) => !baseTracked.includes(item));
   const protectedUnreferencedErrors = assessProtectedUnreferenced(baseKnownUnreferenced, baseTracked, tracked, assetChanges.safeRenames, changes, baseMissing);
   const structureJsonMap = canonicalMigration.approved ? { ...jsonMap } : jsonMap;
