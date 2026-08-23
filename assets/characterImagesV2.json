@@ -243,7 +243,7 @@
     "eventCG": {}
   },
   "anastasia": {
-    "default": null,
+    "default": "/assets/characters-v2/anastasia/portrait/default.webp",
     "fullbodyDefault": "/assets/characters-v2/anastasia/fullbody/default.webp",
     "portrait": {
       "smile": "/assets/characters-v2/anastasia/portrait/smile.webp",
